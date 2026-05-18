@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Gestionnaire de Produits</title>
+    <style>
+        /* Configuration de base pour smartphone */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #1e1e24;
+            color: #e0e0e6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px;
+        }
+
+        /* Conteneur principal */
+        .app-container {
+            width: 100%;
+            max-width: 480px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #ffffff;
+            letter-spacing: 0.5px;
+        }
+
+        /* Grille à deux colonnes */
+        .grid-products {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            width: 100%;
+            margin-bottom: 40px;
+        }
+
+        /* Style des carreaux (Skeuomorphisme / Neumorphism léger) */
+        .tile {
+            aspect-ratio: 1 / 1;
+            background: #25252b;
+            border-radius: 20px;
+            border: 1px solid #2d2d35;
+            box-shadow: inset 1px 1px 2px rgba(255,255,255,0.05), 
+                        4px 4px 10px rgba(0,0,0,0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s ease;
+        }
+
+        .tile:active {
+            transform: scale(0.97);
+        }
+
+        /* Bouton Ajouter (+) */
+        .btn-add {
+            font-size: 3rem;
+            color: #4a4a5a;
+            font-weight: 300;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .tile.active .btn-add {
+            color: #00adb5;
+        }
+
+        /* Affichage du produit */
+        .product-display {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 12px;
+        }
+
+        .product-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+            opacity: 0.7;
+        }
+
+        .product-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to top, rgba(15,15,18,0.9) 0%, rgba(15,15,18,0.4) 50%, rgba(0,0,0,0) 100%);
+            z-index: 2;
+        }
+
+        .product-info {
+            position: relative;
+            z-index: 3;
+            color: #ffffff;
+        }
+
+        .product-name {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .product-details {
+            font-size: 0.8rem;
+            color: #b0b0b8;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Positionnement dans la moitié haute de l'écran */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 15, 18, 0.85);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 40px;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Look original ajusté pour le haut de l'écran */
+        .modal-content {
+            width: 90%;
+            max-width: 440px;
+            background: #25252b;
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+            transform: translateY(-50px);
+            transition: transform 0.3s cubic-bezier(0.1, 0.76, 0.55, 0.94);
+        }
+
+        .modal-overlay.open .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            margin-bottom: 20px;
+            color: #ffffff;
+            text-align: center;
+        }
+
+        /* Formulaire */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            color: #a0a0aa;
+            margin-bottom: 6px;
+        }
+
+        .form-control {
+            width: 100%;
+            background: #1e1e24;
+            border: 1px solid #33333c;
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: #ffffff;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus {
+            border-color: #00adb5;
+        }
+
+        /* Zone d'upload photo */
+        .file-upload-wrapper {
+            position: relative;
+            width: 100%;
+            background: #1e1e24;
+            border: 1px dashed #4a4a5a;
+            border-radius: 12px;
+            padding: 14px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 24px;
+        }
+
+        .file-upload-wrapper input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-upload-text {
+            font-size: 0.9rem;
+            color: #00adb5;
+        }
+
+        /* Bouton Valider */
+        .btn-submit {
+            width: 100%;
+            background: #00adb5;
+            color: #ffffff;
+            border: none;
+            border-radius: 14px;
+            padding: 15px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 173, 181, 0.3);
+        }
+
+        .btn-submit:active {
+            background: #008c92;
+        }
+
+        /* Signature demandée */
+        footer {
+            text-align: center;
+            padding: 20px 0 10px 0;
+            font-size: 0.75rem;
+            color: #4a4a5a;
+            letter-spacing: 0.5px;
+        }
+    </style>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4b6cb7">
+<link rel="apple-touch-icon" href="icon.png"></head>
+<body>
+
+    <div class="app-container">
+        <header>
+            <h1>Mes Produits</h1>
+        </header>
+
+        <!-- Grille extensible -->
+        <main class="grid-products" id="gridProducts">
+            <div class="tile active" id="tile-0">
+                <div class="btn-add" onclick="playHumSound(); openProductModal(0)">+</div>
+            </div>
+        </main>
+
+        <footer>
+            Laiche Mohamed Abdeldjalil 2026
+        </footer>
+    </div>
+
+    <!-- Modal positionné en haut de l'écran -->
+    <div class="modal-overlay" id="modalOverlay" onclick="closeProductModal(event)">
+        <div class="modal-content" id="modalContent" onclick="event.stopPropagation()">
+            <div class="modal-title">Nouveau Produit</div>
+            
+            <form id="productForm" onsubmit="handleFormSubmit(event)">
+                <div class="form-group">
+                    <label for="prodName">Nom du produit</label>
+                    <input type="text" id="prodName" class="form-control" required autocomplete="off">
+                </div>
+
+                <div class="form-group">
+                    <label for="prodQty">Quantité</label>
+                    <input type="number" id="prodQty" class="form-control" required min="1" inputmode="numeric">
+                </div>
+
+                <div class="form-group">
+                    <label for="prodPrice">Prix (€)</label>
+                    <input type="number" id="prodPrice" class="form-control" step="0.01" required min="0" inputmode="decimal">
+                </div>
+
+                <div class="file-upload-wrapper" onclick="playHumSound()">
+                    <span class="file-upload-text" id="uploadStatus">📸 Ajouter une photo</span>
+                    <input type="file" id="prodImage" accept="image/*" onchange="handleFileChange(event)">
+                </div>
+
+                <button type="submit" class="btn-submit" onclick="playHumSound()">Valider</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentTileIndex = 0;
+        let selectedImageDataUrl = "";
+
+        const modalOverlay = document.getElementById('modalOverlay');
+        const gridProducts = document.getElementById('gridProducts');
+        const productForm = document.getElementById('productForm');
+        const uploadStatus = document.getElementById('uploadStatus');
+
+        // Synthétiseur audio : Hum Générateur Industriel (Harmonique Sine, 100Hz doublé, Gate 250ms)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playHumSound() {
+            // Reprendre le contexte si suspendu par le navigateur mobile (sécurité UX)
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const now = audioCtx.currentTime;
+            const duration = 0.250; // Gate 250ms
+
+            // Gain Master (Volume global de l'enveloppe)
+            const masterGain = audioCtx.createGain();
+            masterGain.gain.setValueAtTime(0.3, now);
+            // Enveloppe rectangulaire typée mécanique/industriel (Gate)
+            masterGain.gain.setValueAtTime(0.3, now + duration - 0.01);
+            masterGain.gain.linearRampToValueAtTime(0, now + duration); // Extinction nette à 250ms
+
+            // Fondamentale : 100Hz (Sine)
+            const osc1 = audioCtx.createOscillator();
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(100, now);
+
+            // Harmonique doublée (Fréquence double : 200Hz) pour la texture "Générateur"
+            const osc2 = audioCtx.createOscillator();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(200, now);
+
+            // Connexions
+            osc1.connect(masterGain);
+            osc2.connect(masterGain);
+            masterGain.connect(audioCtx.destination);
+
+            // Démarrage et arrêt synchro
+            osc1.start(now);
+            osc2.start(now);
+            osc1.stop(now + duration);
+            osc2.stop(now + duration);
+        }
+
+        function openProductModal(index) {
+            currentTileIndex = index;
+            modalOverlay.classList.add('open');
+        }
+
+        function closeProductModal(event) {
+            modalOverlay.classList.remove('open');
+            document.activeElement.blur(); 
+            resetForm();
+        }
+
+        function handleFileChange(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    selectedImageDataUrl = e.target.result;
+                    uploadStatus.textContent = "✓ Image chargée";
+                    uploadStatus.style.color = "#4caf50";
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function resetForm() {
+            productForm.reset();
+            selectedImageDataUrl = "";
+            uploadStatus.textContent = "📸 Ajouter une photo";
+            uploadStatus.style.color = "#00adb5";
+        }
+
+        function handleFormSubmit(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('prodName').value;
+            const qty = document.getElementById('prodQty').value;
+            const price = document.getElementById('prodPrice').value;
+
+            const currentTile = document.getElementById(`tile-${currentTileIndex}`);
+            
+            currentTile.innerHTML = `
+                <div class="product-display">
+                    ${selectedImageDataUrl ? `<img src="${selectedImageDataUrl}" class="product-bg" alt="">` : ''}
+                    <div class="product-overlay"></div>
+                    <div class="product-info">
+                        <div class="product-name">${name}</div>
+                        <div class="product-details">
+                            <span>Qté: ${qty}</span>
+                            <span>${price}€</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            currentTile.classList.remove('active');
+
+            // Création du carré suivant avec injection du déclencheur sonore
+            currentTileIndex++;
+            const nextTile = document.createElement('div');
+            nextTile.className = 'tile active';
+            nextTile.id = `tile-${currentTileIndex}`;
+            nextTile.innerHTML = `<div class="btn-add" onclick="playHumSound(); openProductModal(${currentTileIndex})">+</div>`;
+            
+            gridProducts.appendChild(nextTile);
+
+            // Fermeture douce
+            modalOverlay.classList.remove('open');
+            document.activeElement.blur();
+            resetForm();
+        }
+    </script>
+
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));}</script>
+</body>
+</html>
