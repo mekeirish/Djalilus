@@ -129,8 +129,6 @@
             justify-content: center;
             align-items: center;
             position: relative;
-            overflow: hidden;
-            transition: transform 0.2s ease;
             width: 100%;
         }
 
@@ -159,27 +157,46 @@
             color: #00adb5;
         }
 
-        /* Image du produit avec effet d'agrandissement lightbox natif */
+        /* Image du produit avec transition fluide améliorée */
         .product-bg {
             width: 100%;
             height: 100%;
             object-fit: cover;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.1, 0.76, 0.55, 0.94);
+            border-radius: 20px;
+            transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.2s ease;
             z-index: 1;
+            transform-origin: center center;
         }
 
-        /* Classe d'agrandissement plein écran */
+        /* Lightbox d'agrandissement propre sans interaction avec le fond */
         .product-bg.fullscreen-zoom {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            object-fit: contain;
-            background: rgba(15, 15, 18, 0.95);
-            z-index: 3000;
-            padding: 20px;
+            top: 50% !important;
+            left: 50% !important;
+            width: 90vw !important;
+            height: auto !important;
+            max-height: 80vh !important;
+            object-fit: contain !important;
+            z-index: 5000 !important;
+            transform: translate(-50%, -50%) scale(1.05) !important;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+            pointer-events: auto !important;
+        }
+
+        /* Overlay sombre temporaire sous l'image zoomée */
+        .zoom-backdrop {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(15, 15, 18, 0.9);
+            z-index: 4999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .zoom-backdrop.visible {
+            opacity: 1;
+            pointer-events: auto;
         }
 
         /* Zone d'informations sous le carré */
@@ -613,6 +630,9 @@
 <link rel="apple-touch-icon" href="icon.png"></head>
 <body>
 
+    <!-- Fond protecteur d'isolation pour le zoom -->
+    <div class="zoom-backdrop" id="zoomBackdrop" onclick="closeZoomedImage()"></div>
+
     <div class="app-container">
         <header>
             <h1>LD Holding</h1>
@@ -752,6 +772,7 @@
         let enteredCode = "";
         let keypadMode = "admin";
         let activeQtyProductId = null;
+        let zoomedImageElement = null; // Stocke l'élément en cours de zoom
 
         const modalOverlay = document.getElementById('modalOverlay');
         const keypadOverlay = document.getElementById('keypadOverlay');
@@ -774,6 +795,7 @@
         const adminOrdersOverlay = document.getElementById('adminOrdersOverlay');
         const adminOrdersTitle = document.getElementById('adminOrdersTitle');
         const adminOrdersContainer = document.getElementById('adminOrdersContainer');
+        const zoomBackdrop = document.getElementById('zoomBackdrop');
 
         // Audio Synth : Hum Générateur Industriel
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -791,14 +813,36 @@
             osc1.start(now); osc2.start(now); osc1.stop(now + duration); osc2.stop(now + duration);
         }
 
-        // Gestion de la visionneuse plein écran native pour l'image d'un produit
-        function toggleImageZoom(imgElement) {
+        // Gestion de l'agrandissement d'image isolé et ultra-fluide
+        function toggleImageZoom(imgElement, event) {
+            if (event) event.stopPropagation(); // Stoppe la propagation immédiate vers le carreau
             playHumSound();
+
             if (imgElement.classList.contains('fullscreen-zoom')) {
-                imgElement.classList.remove('fullscreen-zoom');
+                closeZoomedImage();
             } else {
+                if (zoomedImageElement) closeZoomedImage(); // Ferme un ancien zoom si existant
+                zoomedImageElement = imgElement;
+                
+                // Marque le carreau parent pour désactiver les comportements d'échelle :active
+                const tileParent = imgElement.closest('.tile');
+                if (tileParent) tileParent.classList.add('zoomed-in-active');
+
+                zoomBackdrop.classList.add('visible');
                 imgElement.classList.add('fullscreen-zoom');
             }
+        }
+
+        function closeZoomedImage() {
+            if (zoomedImageElement) {
+                playHumSound();
+                const tileParent = zoomedImageElement.closest('.tile');
+                if (tileParent) tileParent.classList.remove('zoomed-in-active');
+
+                zoomedImageElement.classList.remove('fullscreen-zoom');
+                zoomedImageElement = null;
+            }
+            zoomBackdrop.classList.remove('visible');
         }
 
         function renderGrid() {
@@ -809,7 +853,7 @@
                 card.className = 'product-card';
                 card.innerHTML = `
                     <div class="tile">
-                        ${product.image ? `<img src="${product.image}" class="product-bg" onclick="toggleImageZoom(this)" alt="">` : ''}
+                        ${product.image ? `<img src="${product.image}" class="product-bg" onclick="toggleImageZoom(this, event)" alt="">` : ''}
                     </div>
                     <div class="product-meta">
                         <div class="product-name-line">${product.name}</div>
@@ -1026,7 +1070,7 @@
 
             const finalOrder = {
                 orderId: Date.now(),
-                status: 'new', // statut initial : nouvelle commande
+                status: 'new',
                 client: clientInfo,
                 items: [...cart],
                 total: cart.reduce((sum, item) => sum + item.totalItemPrice, 0),
@@ -1049,7 +1093,6 @@
             }, 300);
         }
 
-        // Logique de consultation et filtrage des commandes (Admin)
         function openAdminOrdersModal(filterType) {
             adminOrdersContainer.innerHTML = "";
             
@@ -1105,13 +1148,12 @@
 
         function closeAdminOrdersModal() { adminOrdersOverlay.classList.remove('open'); }
 
-        // Mutation du statut vers archivé/traité
         function markOrderAsDone(orderId) {
             const target = adminOrders.find(o => o.orderId === orderId);
             if (target) {
                 target.status = 'done';
                 localStorage.setItem('adminOrders', JSON.stringify(adminOrders));
-                openAdminOrdersModal('new'); // rafraîchir la vue courante
+                openAdminOrdersModal('new'); 
                 showToastNotification("Commande déplacée vers traitées.", false);
             }
         }
