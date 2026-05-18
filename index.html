@@ -157,10 +157,11 @@
             color: #00adb5;
         }
 
-        /* Image du produit avec transition fluide améliorée */
+        /* Image du produit forcée au format carré original */
         .product-bg {
             width: 100%;
             height: 100%;
+            aspect-ratio: 1 / 1;
             object-fit: cover;
             cursor: pointer;
             border-radius: 20px;
@@ -176,6 +177,7 @@
             left: 50% !important;
             width: 90vw !important;
             height: auto !important;
+            aspect-ratio: auto !important;
             max-height: 80vh !important;
             object-fit: contain !important;
             z-index: 5000 !important;
@@ -772,7 +774,7 @@
         let enteredCode = "";
         let keypadMode = "admin";
         let activeQtyProductId = null;
-        let zoomedImageElement = null; // Stocke l'élément en cours de zoom
+        let zoomedImageElement = null; 
 
         const modalOverlay = document.getElementById('modalOverlay');
         const keypadOverlay = document.getElementById('keypadOverlay');
@@ -797,34 +799,22 @@
         const adminOrdersContainer = document.getElementById('adminOrdersContainer');
         const zoomBackdrop = document.getElementById('zoomBackdrop');
 
-        // Audio Synth : Hum Générateur Industriel
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        // Audio Synth coupé (Désactivé à la demande de l'utilisateur)
         function playHumSound() {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const now = audioCtx.currentTime;
-            const duration = 0.250;
-            const masterGain = audioCtx.createGain();
-            masterGain.gain.setValueAtTime(0.3, now);
-            masterGain.gain.setValueAtTime(0.3, now + duration - 0.01);
-            masterGain.gain.linearRampToValueAtTime(0, now + duration);
-            const osc1 = audioCtx.createOscillator(); osc1.type = 'sine'; osc1.frequency.setValueAtTime(100, now);
-            const osc2 = audioCtx.createOscillator(); osc2.type = 'sine'; osc2.frequency.setValueAtTime(200, now);
-            osc1.connect(masterGain); osc2.connect(masterGain); masterGain.connect(audioCtx.destination);
-            osc1.start(now); osc2.start(now); osc1.stop(now + duration); osc2.stop(now + duration);
+            // Silence complet lors du clic sur les boutons
         }
 
         // Gestion de l'agrandissement d'image isolé et ultra-fluide
         function toggleImageZoom(imgElement, event) {
-            if (event) event.stopPropagation(); // Stoppe la propagation immédiate vers le carreau
+            if (event) event.stopPropagation(); 
             playHumSound();
 
             if (imgElement.classList.contains('fullscreen-zoom')) {
                 closeZoomedImage();
             } else {
-                if (zoomedImageElement) closeZoomedImage(); // Ferme un ancien zoom si existant
+                if (zoomedImageElement) closeZoomedImage(); 
                 zoomedImageElement = imgElement;
                 
-                // Marque le carreau parent pour désactiver les comportements d'échelle :active
                 const tileParent = imgElement.closest('.tile');
                 if (tileParent) tileParent.classList.add('zoomed-in-active');
 
