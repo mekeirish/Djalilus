@@ -31,11 +31,14 @@
             flex: 1;
             display: flex;
             flex-direction: column;
+            position: relative;
         }
 
         header {
             text-align: center;
             margin-bottom: 20px;
+            position: relative;
+            width: 100%;
         }
 
         header h1 {
@@ -43,6 +46,28 @@
             font-weight: 600;
             color: #ffffff;
             letter-spacing: 0.5px;
+        }
+
+        /* Tout petit bouton admin jaune orangé en haut à droite */
+        .btn-admin-toggle {
+            position: absolute;
+            top: 4px;
+            right: 0;
+            background: #ff9f43;
+            color: #1e1e24;
+            border: none;
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(255, 159, 67, 0.3);
+        }
+
+        .btn-admin-toggle.logged-in {
+            background: #4caf50;
+            color: white;
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
         }
 
         /* Grille à deux colonnes */
@@ -74,7 +99,7 @@
             transform: scale(0.97);
         }
 
-        /* Bouton Ajouter (+) */
+        /* Bouton Ajouter (+) caché par défaut */
         .btn-add {
             font-size: 3rem;
             color: #4a4a5a;
@@ -82,9 +107,14 @@
             cursor: pointer;
             width: 100%;
             height: 100%;
-            display: flex;
+            display: none; /* Masqué pour les non-admins */
             justify-content: center;
             align-items: center;
+        }
+
+        /* Visible uniquement si l'application est en mode admin */
+        body.is-admin .btn-add {
+            display: flex;
         }
 
         .tile.active .btn-add {
@@ -267,6 +297,60 @@
             background: #008c92;
         }
 
+        /* Pavé numérique d'authentification interne */
+        .keypad-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .keypad-display {
+            width: 100%;
+            background: #1e1e24;
+            border-radius: 12px;
+            padding: 14px;
+            text-align: center;
+            font-size: 1.5rem;
+            letter-spacing: 8px;
+            color: #ff9f43;
+            margin-bottom: 20px;
+            height: 58px;
+            border: 1px solid #33333c;
+        }
+
+        .keypad-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            width: 100%;
+            max-width: 280px;
+        }
+
+        .keypad-btn {
+            background: #1e1e24;
+            color: #ffffff;
+            border: 1px solid #33333c;
+            border-radius: 50%;
+            aspect-ratio: 1 / 1;
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 2px 2px 6px rgba(0,0,0,0.3);
+        }
+
+        .keypad-btn:active {
+            background: #ff9f43;
+            color: #1e1e24;
+        }
+
+        .keypad-btn.clear {
+            color: #ff4d4d;
+            font-size: 0.9rem;
+        }
+
         /* Signature demandée */
         footer {
             text-align: center;
@@ -285,6 +369,8 @@
     <div class="app-container">
         <header>
             <h1>Mes Produits</h1>
+            <!-- Bouton Admin Jaune Orangé -->
+            <button class="btn-admin-toggle" id="adminToggleBtn" onclick="playHumSound(); handleAdminButtonClick()">Admin</button>
         </header>
 
         <!-- Grille extensible -->
@@ -299,7 +385,7 @@
         </footer>
     </div>
 
-    <!-- Modal positionné en haut de l'écran -->
+    <!-- Modal Formulaire Nouveau Produit -->
     <div class="modal-overlay" id="modalOverlay" onclick="closeProductModal(event)">
         <div class="modal-content" id="modalContent" onclick="event.stopPropagation()">
             <div class="modal-title">Nouveau Produit</div>
@@ -330,11 +416,40 @@
         </div>
     </div>
 
+    <!-- Modal Pavé Numérique Interne (Pas de popup système) -->
+    <div class="modal-overlay" id="keypadOverlay" onclick="closeKeypadModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-title" style="color: #ff9f43;">Code Administrateur</div>
+            <div class="keypad-container">
+                <div class="keypad-display" id="keypadDisplay"></div>
+                <div class="keypad-grid">
+                    <div class="keypad-btn" onclick="playHumSound(); pressKey('1')">1</div>
+                    <div class="keypad-btn" onclick="playHumSound(); pressKey('2')">2</div>
+                    <div class="keypad-btn" onclick="playHumSound(); pressKey('3')">3</div>
+                    <div class="keypad-btn" onclick="playHumSound(); pressKey('4')">4</div>
+                    <div class="keypad-btn" onclick="playHumSound(); pressKey('5')">5</div>
+                    <div class="keypad-btn" onclick="playHumSound(); pressKey('6')">6</div>
+                    <div class="keypad-btn" onclick="playHumSound(); pressKey('7')">7</div>
+                    <div class="keypad-btn" onclick="playHumSound(); pressKey('8')">8</div>
+                    <div class="keypad-btn" onclick="playHumSound(); pressKey('9')">9</div>
+                    <div class="keypad-btn clear" onclick="playHumSound(); pressKey('C')">C</div>
+                    <div class="keypad-btn" onclick="playHumSound(); pressKey('0')">0</div>
+                    <div class="keypad-btn" style="color: #4caf50; font-size: 1.5rem;" onclick="playHumSound(); pressKey('E')">✓</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         let currentTileIndex = 0;
         let selectedImageDataUrl = "";
+        let isAdmin = false;
+        let enteredCode = "";
 
         const modalOverlay = document.getElementById('modalOverlay');
+        const keypadOverlay = document.getElementById('keypadOverlay');
+        const keypadDisplay = document.getElementById('keypadDisplay');
+        const adminToggleBtn = document.getElementById('adminToggleBtn');
         const gridProducts = document.getElementById('gridProducts');
         const productForm = document.getElementById('productForm');
         const uploadStatus = document.getElementById('uploadStatus');
@@ -343,41 +458,80 @@
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
         function playHumSound() {
-            // Reprendre le contexte si suspendu par le navigateur mobile (sécurité UX)
             if (audioCtx.state === 'suspended') {
                 audioCtx.resume();
             }
 
             const now = audioCtx.currentTime;
-            const duration = 0.250; // Gate 250ms
+            const duration = 0.250;
 
-            // Gain Master (Volume global de l'enveloppe)
             const masterGain = audioCtx.createGain();
             masterGain.gain.setValueAtTime(0.3, now);
-            // Enveloppe rectangulaire typée mécanique/industriel (Gate)
             masterGain.gain.setValueAtTime(0.3, now + duration - 0.01);
-            masterGain.gain.linearRampToValueAtTime(0, now + duration); // Extinction nette à 250ms
+            masterGain.gain.linearRampToValueAtTime(0, now + duration);
 
-            // Fondamentale : 100Hz (Sine)
             const osc1 = audioCtx.createOscillator();
             osc1.type = 'sine';
             osc1.frequency.setValueAtTime(100, now);
 
-            // Harmonique doublée (Fréquence double : 200Hz) pour la texture "Générateur"
             const osc2 = audioCtx.createOscillator();
             osc2.type = 'sine';
             osc2.frequency.setValueAtTime(200, now);
 
-            // Connexions
             osc1.connect(masterGain);
             osc2.connect(masterGain);
             masterGain.connect(audioCtx.destination);
 
-            // Démarrage et arrêt synchro
             osc1.start(now);
             osc2.start(now);
             osc1.stop(now + duration);
             osc2.stop(now + duration);
+        }
+
+        // Gestion du bouton Admin
+        function handleAdminButtonClick() {
+            if (isAdmin) {
+                // Déconnexion si déjà connecté
+                isAdmin = false;
+                document.body.classList.remove('is-admin');
+                adminToggleBtn.textContent = "Admin";
+                adminToggleBtn.classList.remove('logged-in');
+            } else {
+                // Ouvre le pavé numérique interne
+                enteredCode = "";
+                keypadDisplay.textContent = "";
+                keypadOverlay.classList.add('open');
+            }
+        }
+
+        function closeKeypadModal() {
+            keypadOverlay.classList.remove('open');
+        }
+
+        // Logique du Pavé numérique
+        function pressKey(key) {
+            if (key === 'C') {
+                enteredCode = "";
+                keypadDisplay.textContent = "";
+            } else if (key === 'E') {
+                if (enteredCode === "1212") {
+                    isAdmin = true;
+                    document.body.classList.add('is-admin');
+                    adminToggleBtn.textContent = "✓ Admin";
+                    adminToggleBtn.classList.add('logged-in');
+                    closeKeypadModal();
+                } else {
+                    // Erreur temporaire visuelle en cas de mauvais code
+                    keypadDisplay.textContent = "ERREUR";
+                    enteredCode = "";
+                    setTimeout(() => { keypadDisplay.textContent = ""; }, 800);
+                }
+            } else {
+                if (enteredCode.length < 4) {
+                    enteredCode += key;
+                    keypadDisplay.textContent = "*".repeat(enteredCode.length);
+                }
+            }
         }
 
         function openProductModal(index) {
@@ -435,7 +589,7 @@
             `;
             currentTile.classList.remove('active');
 
-            // Création du carré suivant avec injection du déclencheur sonore
+            // Création du carré suivant (le bouton + héritera des règles CSS basées sur .is-admin)
             currentTileIndex++;
             const nextTile = document.createElement('div');
             nextTile.className = 'tile active';
