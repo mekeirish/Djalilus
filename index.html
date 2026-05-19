@@ -1483,6 +1483,16 @@
 
         function renderStationCategories() {
             const container = document.getElementById('stationCategoriesContainer');
+            
+            // Sauvegarder l'état ouvert/fermé des accordions avant le rendu
+            const openPanels = {};
+            categories.forEach(cat => {
+                const p = document.getElementById(`station-panel-${cat.id}`);
+                if (p && p.style.display === "block") {
+                    openPanels[cat.id] = true;
+                }
+            });
+
             container.innerHTML = "";
             
             if (categories.length === 0) {
@@ -1509,12 +1519,16 @@
                     prodsHtml = `<div style="text-align:center;color:#a0a0aa;font-size:0.85rem;padding:10px 0;">Aucun produit</div>`;
                 }
 
+                const isOpen = openPanels[cat.id];
+                const displayStyle = isOpen ? 'display: block;' : 'display: none;';
+                const arrowChar = isOpen ? '▲' : '▼';
+
                 itemWrap.innerHTML = `
                     <button class="station-cat-btn" onclick="toggleStationAccordion(${cat.id})">
                         <span>${cat.name}</span>
-                        <span id="station-arrow-${cat.id}">▼</span>
+                        <span id="station-arrow-${cat.id}">${arrowChar}</span>
                     </button>
-                    <div class="station-prod-panel" id="station-panel-${cat.id}">
+                    <div class="station-prod-panel" id="station-panel-${cat.id}" style="${displayStyle}">
                         ${prodsHtml}
                     </div>
                 `;
@@ -1797,17 +1811,6 @@
             }
         }
 
-        function openQuantityKeypad(productId) {
-            keypadMode = "quantity"; 
-            activeQtyProductId = productId;
-            maxCodeLength = 5; 
-            keypadTitleModel.textContent = "Quantité à commander";
-            rebuildDisplayDots(1); 
-            currentCode = ""; 
-            updateDisplay(); 
-            keypadOverlay.classList.add('open');
-        }
-
         // Modals Catégories
         function openCategoryModal() { categoryModalOverlay.classList.add('open'); }
         function closeCategoryModal(event) { categoryModalOverlay.classList.remove('open'); resetCategoryForm(); }
@@ -1926,6 +1929,17 @@
 
             updateCheckoutBar();
             renderView();
+        }
+
+        function openQuantityKeypad(productId) {
+            keypadMode = "quantity"; 
+            activeQtyProductId = productId;
+            maxCodeLength = 5; 
+            keypadTitleModel.textContent = "Quantité à commander";
+            rebuildDisplayDots(1); 
+            currentCode = ""; 
+            updateDisplay(); 
+            keypadOverlay.classList.add('open');
         }
 
         function showToastNotification(message, isWarning = false) {
