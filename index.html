@@ -505,6 +505,16 @@
             align-items: center;
             justify-content: center;
         }
+        
+        /* Zone de texte claire pour l'affichage de la quantité */
+        .display-text-clear {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #ff9f43;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(255, 159, 67, 0.3);
+        }
+
         .dot {
             width: 12px;
             height: 12px;
@@ -875,7 +885,7 @@
         </div>
     </div>
 
-    <!-- NOUVEAU MODAL FLOTTANT INTERNE DE CONFIRMATION DE SUPPRESSION (SANS POPUP) -->
+    <!-- Modal externe flottant interne de confirmation de suppression -->
     <div class="modal-overlay" id="deleteConfirmOverlay" onclick="closeDeleteConfirmModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-title" style="color: #ff4d4d; font-weight: 700;">Confirmer la suppression</div>
@@ -889,7 +899,7 @@
         </div>
     </div>
 
-    <!-- NOUVEAU MODAL PAVÉ NUMÉRIQUE INDUSTRIEL RETROÉCLAIRÉ -->
+    <!-- NOUVEAU MODAL PAVÉ NUMÉRIQUE INDUSTRIEL ADAPTATIF (CHIFFRES EN CLAIR OU MASQUÉS) -->
     <div class="modal-overlay" id="keypadOverlay" onclick="closeKeypadModal()">
         <div class="modal-content" onclick="event.stopPropagation()" style="background: transparent; box-shadow: none; padding: 0; width: auto;">
             
@@ -897,10 +907,7 @@
                 <div class="keypad-header">
                     <h1 id="keypadTitleModel">Code d'Accès</h1>
                     <div class="display-case" id="dotDisplayCase">
-                        <div class="dot"></div>
-                        <div class="dot"></div>
-                        <div class="dot"></div>
-                        <div class="dot"></div>
+                        <!-- Rempli dynamiquement avec les .dot (admin) ou du texte clair (quantité) -->
                     </div>
                 </div>
 
@@ -1084,27 +1091,44 @@
             } catch (e) { console.error(e); }
         }
 
-        // LOGIQUE INTERNE DE MISE À JOUR DES LEDS DYNAMIQUES
+        // LOGIQUE ADAPTATIVE DE MISE À JOUR DE LA ZONE D'AFFICHAGE (CHIFFRES OU POINTS)
         function updateDisplay() {
-            const dots = document.querySelectorAll('.dot');
-            dots.forEach((dot, index) => {
-                if (index < currentCode.length) dot.classList.add('active');
-                else dot.classList.remove('active');
-            });
+            if (keypadMode === "admin") {
+                const dots = document.querySelectorAll('.dot');
+                dots.forEach((dot, index) => {
+                    if (index < currentCode.length) dot.classList.add('active');
+                    else dot.classList.remove('active');
+                });
+            } else if (keypadMode === "quantity") {
+                const clearTextContainer = document.getElementById('clearQuantityText');
+                if (clearTextContainer) {
+                    clearTextContainer.textContent = currentCode || "0";
+                }
+            }
         }
 
         function rebuildDisplayDots(count) {
             dotDisplayCase.innerHTML = "";
-            for(let i=0; i<count; i++) {
-                const d = document.createElement('div');
-                d.className = 'dot';
-                dotDisplayCase.appendChild(d);
+            if (keypadMode === "admin") {
+                for(let i=0; i<count; i++) {
+                    const d = document.createElement('div');
+                    d.className = 'dot';
+                    dotDisplayCase.appendChild(d);
+                }
+            } else if (keypadMode === "quantity") {
+                const textSpan = document.createElement('span');
+                textSpan.className = 'display-text-clear';
+                textSpan.id = 'clearQuantityText';
+                textSpan.textContent = "0";
+                dotDisplayCase.appendChild(textSpan);
             }
         }
 
         function pressKey(num) {
             playHumSound();
             if (currentCode.length < maxCodeLength) {
+                // Éviter d'avoir des zéros initiaux inutiles en mode quantité
+                if (keypadMode === "quantity" && currentCode === "" && num === "0") return;
                 currentCode += num;
                 updateDisplay();
             }
@@ -1176,7 +1200,6 @@
         // Action sur l'onglet spécial d'administration Station
         function openStationPage() {
             alert("Ouverture de la page Station (Espace d'administration dédié).");
-            // Sera rempli ultérieurement
         }
 
         // Gestion de l'agrandissement d'image isolé
@@ -1213,10 +1236,7 @@
             deletionTargetType = type;
             deletionTargetId = id;
             deleteConfirmMessage.textContent = messageText;
-            
-            // Attachement dynamique de l'action de validation finale
             btnConfirmDeleteAction.onclick = executeDeletion;
-            
             deleteConfirmOverlay.classList.add('open');
         }
 
@@ -1245,7 +1265,6 @@
             renderView();
         }
 
-        // Déclencheurs initiaux de suppression branchés sur les boutons "×"
         function deleteCategory(catId, event) {
             if (event) event.stopPropagation();
             const cat = categories.find(c => c.id === catId);
@@ -1327,9 +1346,6 @@
                 const hasQty = product.selectedQty && product.selectedQty > 0;
                 const isInCart = cart.some(item => item.id === product.id);
                 
-                // Formule de calcul exacte : prix de base x nombre de pack x quantité saisie
-                const displayTotalProduct = hasQty ? (parseFloat(product.price) * parseInt(product.qty) * parseInt(product.selectedQty)) : 0;
-
                 const card = document.createElement('div');
                 card.className = 'product-card';
                 card.innerHTML = `
@@ -1340,7 +1356,7 @@
                     <div class="product-meta">
                         <div class="product-name-line">${product.name}</div>
                         <div class="product-details-line">
-                            ${hasQty ? `${displayTotalProduct.toFixed(2)} DZD` : `${parseFloat(product.price).toFixed(2)} DZD - Pack: ${product.qty}`}
+                            ${parseFloat(product.price).toFixed(2)} DZD - Pack: ${product.qty}
                         </div>
                     </div>
                     <div class="product-actions">
@@ -1397,10 +1413,10 @@
             keypadMode = "quantity"; 
             activeQtyProductId = productId;
             maxCodeLength = 5; 
-            keypadTitleModel.textContent = "Saisir Quantité";
-            rebuildDisplayDots(5);
+            keypadTitleModel.textContent = "Quantité à commander";
+            rebuildDisplayDots(1); // Un seul conteneur de texte dynamique pour la clarté
             currentCode = ""; 
-                updateDisplay(); 
+            updateDisplay(); 
             keypadOverlay.classList.add('open');
         }
 
@@ -1503,7 +1519,6 @@
                 return;
             }
 
-            // Calcul du montant exact : prix x nombre de pack x quantité
             const totalItemPrice = parseFloat(prod.price) * parseInt(prod.qty) * qtyToOrder;
             const existingIndex = cart.findIndex(item => item.id === productId);
             
@@ -1583,6 +1598,7 @@
             customerForm.reset();
         }
 
+        // Soumission finale
         function handleCustomerFormSubmit(event) {
             event.preventDefault();
             
