@@ -66,11 +66,36 @@
             display: none;
         }
 
-        /* Bouton admin jaune orangé */
-        .btn-admin-toggle {
+        /* Conteneur des boutons d'actions en haut à droite */
+        .header-actions {
             position: absolute;
             top: 4px;
             right: 0;
+            display: flex;
+            gap: 6px;
+        }
+
+        /* Bouton de bascule de mode (Light/Dark) */
+        .btn-mode-toggle {
+            background: #33333c;
+            border: 1px solid #444450;
+            border-radius: 50%;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.75rem;
+            cursor: pointer;
+            padding: 0 6px;
+        }
+
+        body.light-mode .btn-mode-toggle {
+            background: #ffffff;
+            border-color: #cbd5e1;
+        }
+
+        /* Bouton admin jaune orangé */
+        .btn-admin-toggle {
             background: #ff9f43;
             color: #1e1e24;
             border: none;
@@ -795,6 +820,95 @@
             pointer-events: none;
             z-index: 10;
         }
+
+        /* ==========================================================================
+           OVERRIDES POUR LE MODE LIGHT
+           ========================================================================== */
+        body.light-mode {
+            background-color: #f5f5f7;
+            color: #1d1d1f;
+        }
+        body.light-mode header h1 {
+            color: #1d1d1f;
+        }
+        body.light-mode .tile {
+            background: #ffffff;
+            border: 1px solid #e5e5ea;
+            box-shadow: inset 1px 1px 2px rgba(255,255,255,0.5), 0 4px 12px rgba(0,0,0,0.05);
+        }
+        body.light-mode .product-name-line {
+            color: #1d1d1f;
+        }
+        body.light-mode .product-details-line {
+            color: #86868b;
+        }
+        body.light-mode .btn-qty-action {
+            background: #e5e5ea;
+            color: #1d1d1f;
+            border: 1px solid #d1d1d6;
+        }
+        body.light-mode .checkout-bar {
+            background: #ffffff;
+            border-top: 1px solid #e5e5ea;
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
+        }
+        body.light-mode .btn-checkout-left {
+            background: #e5e5ea;
+            color: #1d1d1f;
+            border: 1px solid #d1d1d6;
+        }
+        body.light-mode .modal-content {
+            background: #ffffff;
+            color: #1d1d1f;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+        }
+        body.light-mode .modal-title {
+            color: #1d1d1f;
+        }
+        body.light-mode .form-control {
+            background: #f5f5f7;
+            border: 1px solid #d1d1d6;
+            color: #1d1d1f;
+        }
+        body.light-mode .form-group label {
+            color: #86868b;
+        }
+        body.light-mode .btn-confirm-cancel {
+            background: #e5e5ea;
+            color: #1d1d1f;
+            border: 1px solid #d1d1d6;
+        }
+        body.light-mode .cart-item {
+            border-bottom: 1px solid #e5e5ea;
+        }
+        body.light-mode .cart-item-title {
+            color: #1d1d1f;
+        }
+        body.light-mode .cart-item-sub {
+            color: #86868b;
+        }
+        body.light-mode .order-card {
+            background: #ffffff;
+            border: 1px solid #e5e5ea;
+        }
+        body.light-mode .order-client-name {
+            color: #1d1d1f;
+        }
+        body.light-mode .order-client-meta {
+            color: #86868b;
+        }
+        body.light-mode .btn-order-call {
+            background: #ffffff;
+            border: 1px solid #e5e5ea;
+        }
+        body.light-mode .btn-admin-panel {
+            background: #ffffff;
+            color: #1d1d1f;
+            border: 1px solid #e5e5ea;
+        }
+        body.light-mode .btn-add {
+            color: #cbd5e1;
+        }
     </style>
 
 <link rel="manifest" href="manifest.json">
@@ -809,7 +923,10 @@
         <header>
             <button class="btn-back" id="btnBackToCats" onclick="navigateToCategories()">← Retour</button>
             <h1 id="appHeaderTitle">LD Holding</h1>
-            <button class="btn-admin-toggle" id="adminToggleBtn" onclick="handleAdminButtonClick()">Admin</button>
+            <div class="header-actions">
+                <button class="btn-mode-toggle" id="modeToggleBtn" onclick="toggleTheme()">💡</button>
+                <button class="btn-admin-toggle" id="adminToggleBtn" onclick="handleAdminButtonClick()">Admin</button>
+            </div>
         </header>
 
         <!-- Menu d'onglets complémentaires pour l'Admin -->
@@ -1037,6 +1154,11 @@
         const deleteConfirmOverlay = document.getElementById('deleteConfirmOverlay');
         const deleteConfirmMessage = document.getElementById('deleteConfirmMessage');
         const btnConfirmDeleteAction = document.getElementById('btnConfirmDeleteAction');
+
+        // Fonction de bascule de thèmes (Light / Dark)
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+        }
 
         // AUDIO ENGINE DU PAVÉ NUMÉRIQUE INDUSTRIEL
         function initAudio() {
