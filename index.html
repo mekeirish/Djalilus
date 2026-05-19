@@ -23,6 +23,7 @@
             align-items: center;
             padding: 16px;
             padding-bottom: 90px;
+            position: relative;
         }
 
         /* Conteneur principal */
@@ -47,6 +48,22 @@
             font-weight: 600;
             color: #ffffff;
             letter-spacing: 0.5px;
+        }
+
+        /* Bouton Retour aux catégories */
+        .btn-back {
+            position: absolute;
+            top: 4px;
+            left: 0;
+            background: #33333c;
+            color: #ffffff;
+            border: 1px solid #444450;
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            display: none;
         }
 
         /* Bouton admin jaune orangé */
@@ -95,11 +112,21 @@
             cursor: pointer;
             text-align: center;
             box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
+            position: relative;
         }
 
         .btn-admin-panel.active-tab {
             border-color: #ff9f43;
             color: #ff9f43;
+        }
+
+        /* Point rouge de notification dynamique */
+        .notification-dot {
+            color: #ff4d4d;
+            font-size: 0.9rem;
+            vertical-align: middle;
+            margin-left: 2px;
+            display: none;
         }
 
         /* Grille à deux colonnes */
@@ -115,6 +142,7 @@
             display: flex;
             flex-direction: column;
             width: 100%;
+            position: relative;
         }
 
         /* Style des carreaux */
@@ -134,6 +162,31 @@
 
         .tile:not(.zoomed-in-active):active {
             transform: scale(0.97);
+        }
+
+        /* Bouton de suppression en mode admin */
+        .btn-delete-badge {
+            display: none;
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            width: 24px;
+            height: 24px;
+            background: #ff4d4d;
+            color: #ffffff;
+            border: none;
+            border-radius: 50%;
+            font-size: 0.9rem;
+            font-weight: bold;
+            line-height: 24px;
+            text-align: center;
+            cursor: pointer;
+            z-index: 10;
+            box-shadow: 0 2px 6px rgba(255, 77, 77, 0.4);
+        }
+
+        body.is-admin .btn-delete-badge {
+            display: block;
         }
 
         /* Bouton Ajouter (+) caché par défaut */
@@ -255,13 +308,17 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            transition: opacity 0.2s;
+            transition: background 0.2s, opacity 0.2s;
         }
 
         .btn-cart-action.disabled {
             background: #3a3a44;
             color: #6a6a75;
             cursor: not-allowed;
+        }
+
+        .btn-cart-action.in-cart {
+            background: #d34731;
         }
 
         /* Structure Modale haute */
@@ -381,59 +438,155 @@
             box-shadow: 0 4px 12px rgba(0, 173, 181, 0.3);
         }
 
-        /* Pavé numérique */
-        .keypad-container {
+        /* Flexbox pour boutons de confirmation de suppression */
+        .confirm-buttons-row {
             display: flex;
-            flex-direction: column;
-            align-items: center;
+            gap: 12px;
+            margin-top: 24px;
         }
 
-        .keypad-display {
-            width: 100%;
-            background: #1e1e24;
+        .btn-confirm-cancel {
+            flex: 1;
+            background: #33333c;
+            color: #ffffff;
+            border: 1px solid #444450;
             border-radius: 12px;
             padding: 14px;
-            text-align: center;
-            font-size: 1.5rem;
-            letter-spacing: 4px;
-            color: #ff9f43;
-            margin-bottom: 20px;
-            height: 58px;
-            border: 1px solid #33333c;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
         }
 
-        .keypad-grid {
+        .btn-confirm-delete {
+            flex: 1;
+            background: #ff4d4d;
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(255, 77, 77, 0.3);
+        }
+
+        /* STYLE INJECTÉ : DESIGN DU NOUVEAU PAVÉ NUMÉRIQUE */
+        .phone-container {
+            width: 100%;
+            max-width: 340px;
+            background: linear-gradient(145deg, #23262a, #181a1d);
+            padding: 30px 20px;
+            border-radius: 24px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+            border: 1px solid #2a2d32;
+            margin: 0 auto;
+        }
+
+        .keypad-header {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+        .keypad-header h1 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #6a717c;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+        .display-case {
+            display: inline-flex;
+            gap: 20px;
+            background-color: #111316;
+            padding: 16px 30px;
+            border-radius: 12px;
+            box-shadow: inset 0 4px 8px rgba(0,0,0,0.8);
+            min-height: 44px;
+            align-items: center;
+            justify-content: center;
+        }
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #2a110d;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.8);
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .dot.active {
+            background-color: #d34731;
+            box-shadow: 0 0 12px #d34731, inset 0 1px 2px rgba(255,255,255,0.5);
+            transform: scale(1.2);
+        }
+        .keypad-grid-model {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
+            gap: 16px;
             width: 100%;
-            max-width: 280px;
         }
-
-        .keypad-btn {
-            background: #1e1e24;
-            color: #ffffff;
-            border: 1px solid #33333c;
-            border-radius: 50%;
+        .key {
+            background: linear-gradient(135deg, #30353b, #1c1e22);
+            border: none;
+            border-radius: 16px;
             aspect-ratio: 1 / 1;
-            font-size: 1.25rem;
-            font-weight: 600;
             display: flex;
             justify-content: center;
             align-items: center;
             cursor: pointer;
-            box-shadow: 2px 2px 6px rgba(0,0,0,0.3);
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5), inset 0 2px 1px rgba(255, 255, 255, 0.1), inset 0 -3px 4px rgba(0, 0, 0, 0.4), 0 0 0 1px #d34731;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease, background 0.2s ease;
         }
+        .key span {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #d34731;
+            text-shadow: 0 -1px 1px rgba(0,0,0,0.6);
+            transition: color 0.15s ease, text-shadow 0.15s ease;
+            position: relative;
+            z-index: 2;
+        }
+        .key.action span {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .key.success-btn {
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5), inset 0 2px 1px rgba(255, 255, 255, 0.1), inset 0 -3px 4px rgba(0, 0, 0, 0.4), 0 0 0 1px #2e7d32;
+        }
+        .key.success-btn span { color: #2e7d32; }
 
-        .keypad-btn:active {
-            background: #ff9f43;
-            color: #1e1e24;
+        .key:active {
+            background: linear-gradient(135deg, #131518, #22252a);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), inset 0 4px 8px rgba(0, 0, 0, 0.8), 0 0 10px rgba(211, 71, 49, 0.3), 0 0 0 1px #d34731;
+            transform: translateY(4px) scale(0.97);
+            transition: transform 0.04s linear, box-shadow 0.04s linear;
         }
-
-        .keypad-btn.clear {
-            color: #ff4d4d;
-            font-size: 0.9rem;
+        .key:active span {
+            color: #ff8570;
+            text-shadow: 0 0 10px rgba(255, 133, 112, 0.8);
         }
+        .key.success-btn:active {
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), inset 0 4px 8px rgba(0, 0, 0, 0.8), 0 0 10px rgba(76, 175, 80, 0.3), 0 0 0 1px #4caf50;
+        }
+        .key.success-btn:active span {
+            color: #81c784;
+            text-shadow: 0 0 10px rgba(129, 199, 132, 0.8);
+        }
+        .key::after {
+            content: "";
+            position: absolute;
+            width: 100%; height: 100%; top: 0; left: 0; opacity: 0; z-index: 1;
+            background: radial-gradient(circle, rgba(211, 71, 49, 0.4) 0%, rgba(0,0,0,0) 70%);
+            transform: scale(0.3); transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+        .key.success-btn::after {
+            background: radial-gradient(circle, rgba(76, 175, 80, 0.4) 0%, rgba(0,0,0,0) 70%);
+        }
+        .key:active::after { opacity: 1; transform: scale(1.3); transition: 0s; }
 
         /* Structure d'une fiche Commande pour l'Admin */
         .order-card {
@@ -618,12 +771,19 @@
             font-size: 0.95rem;
         }
 
-        footer {
+        /* Signature discrète tout en bas */
+        .app-signature {
+            position: absolute;
+            bottom: 8px;
+            left: 0;
+            width: 100%;
             text-align: center;
-            padding: 20px 0 10px 0;
-            font-size: 0.75rem;
-            color: #4a4a5a;
+            font-size: 0.65rem;
+            color: #a0a0aa;
+            opacity: 0.4;
             letter-spacing: 0.5px;
+            pointer-events: none;
+            z-index: 10;
         }
     </style>
 
@@ -637,35 +797,57 @@
 
     <div class="app-container">
         <header>
-            <h1>LD Holding</h1>
-            <button class="btn-admin-toggle" id="adminToggleBtn" onclick="playHumSound(); handleAdminButtonClick()">Admin</button>
+            <button class="btn-back" id="btnBackToCats" onclick="navigateToCategories()">← Retour</button>
+            <h1 id="appHeaderTitle">LD Holding</h1>
+            <button class="btn-admin-toggle" id="adminToggleBtn" onclick="handleAdminButtonClick()">Admin</button>
         </header>
 
         <!-- Menu d'onglets complémentaires pour l'Admin -->
         <div class="admin-dashboard-panel" id="adminDashboardPanel">
-            <button class="btn-admin-panel" onclick="playHumSound(); openAdminOrdersModal('new')">Nouvelles commandes</button>
-            <button class="btn-admin-panel" onclick="playHumSound(); openAdminOrdersModal('done')">Commandes traitées</button>
-            <button class="btn-admin-panel" style="border-color:#4a4a5a;color:#a0a0aa;" onclick="playHumSound(); alert('Mode ajout actif : utilisez le bouton (+) disponible au bas du catalogue de produits.')">Ajouter Produit</button>
+            <button class="btn-admin-panel" onclick="openAdminOrdersModal('new')">
+                Nouvelles <span class="notification-dot" id="btnNewOrdersDot">●</span>
+            </button>
+            <button class="btn-admin-panel" onclick="openAdminOrdersModal('done')">Traitées</button>
+            <button class="btn-admin-panel" style="border-color:#4a4a5a; color:#ff9f43;" onclick="openStationPage()">Station</button>
         </div>
 
         <main class="grid-products" id="gridProducts">
             <!-- Injecté dynamiquement -->
         </main>
+    </div>
 
-        <footer>
-            Laiche Mohamed Abdeldjalil 2026
-        </footer>
+    <!-- Signature discrète et tout en bas de l'écran -->
+    <div class="app-signature">
+        Made by Brahim Laiche 2026 Paris
     </div>
 
     <!-- Barre de commande en bas -->
     <div class="checkout-bar" id="checkoutBar">
-        <button class="btn-checkout-left" onclick="playHumSound(); openCartModal()">Liste</button>
+        <button class="btn-checkout-left" onclick="openCartModal()">Liste</button>
         <div class="checkout-total-center" id="checkoutTotalDisplay">Total : 0.00 DZD</div>
-        <button class="btn-checkout-right" onclick="playHumSound(); openCustomerDetailsModal()">Commander</button>
+        <button class="btn-checkout-right" onclick="openCustomerDetailsModal()">Commander</button>
     </div>
 
     <!-- Notification flottante unique -->
     <div class="toast-notification" id="toastNotification">Produit ajouté au panier.</div>
+
+    <!-- Modal Formulaire Nouvelle Catégorie -->
+    <div class="modal-overlay" id="categoryModalOverlay" onclick="closeCategoryModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-title">Nouvelle Catégorie</div>
+            <form id="categoryForm" onsubmit="handleCategoryFormSubmit(event)">
+                <div class="form-group">
+                    <label for="catName">Nom de la catégorie</label>
+                    <input type="text" id="catName" class="form-control" required autocomplete="off">
+                </div>
+                <div class="file-upload-wrapper">
+                    <span class="file-upload-text" id="catUploadStatus">📸 Ajouter une photo</span>
+                    <input type="file" id="catImage" accept="image/*" onchange="handleCatFileChange(event)">
+                </div>
+                <button type="submit" class="btn-submit">Valider</button>
+            </form>
+        </div>
+    </div>
 
     <!-- Modal Formulaire Nouveau Produit -->
     <div class="modal-overlay" id="modalOverlay" onclick="closeProductModal(event)">
@@ -684,36 +866,63 @@
                     <label for="prodPrice">Prix (DZD)</label>
                     <input type="number" id="prodPrice" class="form-control" step="0.01" required min="0" inputmode="decimal">
                 </div>
-                <div class="file-upload-wrapper" onclick="playHumSound()">
+                <div class="file-upload-wrapper">
                     <span class="file-upload-text" id="uploadStatus">📸 Ajouter une photo</span>
                     <input type="file" id="prodImage" accept="image/*" onchange="handleFileChange(event)">
                 </div>
-                <button type="submit" class="btn-submit" onclick="playHumSound()">Valider</button>
+                <button type="submit" class="btn-submit">Valider</button>
             </form>
         </div>
     </div>
 
-    <!-- Modal Pavé Numérique Interne -->
-    <div class="modal-overlay" id="keypadOverlay" onclick="closeKeypadModal()">
+    <!-- NOUVEAU MODAL FLOTTANT INTERNE DE CONFIRMATION DE SUPPRESSION (SANS POPUP) -->
+    <div class="modal-overlay" id="deleteConfirmOverlay" onclick="closeDeleteConfirmModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
-            <div class="modal-title" id="keypadTitle" style="color: #ff9f43;">Code Administrateur</div>
-            <div class="keypad-container">
-                <div class="keypad-display" id="keypadDisplay"></div>
-                <div class="keypad-grid">
-                    <div class="keypad-btn" onclick="playHumSound(); pressKey('1')">1</div>
-                    <div class="keypad-btn" onclick="playHumSound(); pressKey('2')">2</div>
-                    <div class="keypad-btn" onclick="playHumSound(); pressKey('3')">3</div>
-                    <div class="keypad-btn" onclick="playHumSound(); pressKey('4')">4</div>
-                    <div class="keypad-btn" onclick="playHumSound(); pressKey('5')">5</div>
-                    <div class="keypad-btn" onclick="playHumSound(); pressKey('6')">6</div>
-                    <div class="keypad-btn" onclick="playHumSound(); pressKey('7')">7</div>
-                    <div class="keypad-btn" onclick="playHumSound(); pressKey('8')">8</div>
-                    <div class="keypad-btn" onclick="playHumSound(); pressKey('9')">9</div>
-                    <div class="keypad-btn clear" onclick="playHumSound(); pressKey('C')">C</div>
-                    <div class="keypad-btn" onclick="playHumSound(); pressKey('0')">0</div>
-                    <div class="keypad-btn" style="color: #4caf50; font-size: 1.5rem;" onclick="playHumSound(); pressKey('E')">✓</div>
+            <div class="modal-title" style="color: #ff4d4d; font-weight: 700;">Confirmer la suppression</div>
+            <div id="deleteConfirmMessage" style="text-align: center; font-size: 0.95rem; color: #e0e0e6; line-height: 1.5; padding: 10px 0;">
+                <!-- Rempli dynamiquement -->
+            </div>
+            <div class="confirm-buttons-row">
+                <button class="btn-confirm-cancel" onclick="closeDeleteConfirmModal()">Annuler</button>
+                <button class="btn-confirm-delete" id="btnConfirmDeleteAction">Supprimer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOUVEAU MODAL PAVÉ NUMÉRIQUE INDUSTRIEL RETROÉCLAIRÉ -->
+    <div class="modal-overlay" id="keypadOverlay" onclick="closeKeypadModal()">
+        <div class="modal-content" onclick="event.stopPropagation()" style="background: transparent; box-shadow: none; padding: 0; width: auto;">
+            
+            <div class="phone-container">
+                <div class="keypad-header">
+                    <h1 id="keypadTitleModel">Code d'Accès</h1>
+                    <div class="display-case" id="dotDisplayCase">
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                    </div>
+                </div>
+
+                <div class="keypad-grid-model">
+                    <button class="key" onclick="pressKey('1')"><span>1</span></button>
+                    <button class="key" onclick="pressKey('2')"><span>2</span></button>
+                    <button class="key" onclick="pressKey('3')"><span>3</span></button>
+                    
+                    <button class="key" onclick="pressKey('4')"><span>4</span></button>
+                    <button class="key" onclick="pressKey('5')"><span>5</span></button>
+                    <button class="key" onclick="pressKey('6')"><span>6</span></button>
+                    
+                    <button class="key" onclick="pressKey('7')"><span>7</span></button>
+                    <button class="key" onclick="pressKey('8')"><span>8</span></button>
+                    <button class="key" onclick="pressKey('9')"><span>9</span></button>
+                    
+                    <button class="key action" onclick="deleteKey()"><span>Effacer</span></button>
+                    <button class="key" onclick="pressKey('0')"><span>0</span></button>
+                    <button class="key action success-btn" onclick="validateCode()"><span>OK</span></button>
                 </div>
             </div>
+
         </div>
     </div>
 
@@ -724,7 +933,7 @@
             <div id="cartItemsContainer" style="margin-bottom: 20px;">
                 <!-- Injecté dynamiquement -->
             </div>
-            <button class="btn-submit" style="background: #33333c; box-shadow: none;" onclick="playHumSound(); closeCartModal()">Fermer</button>
+            <button class="btn-submit" style="background: #33333c; box-shadow: none;" onclick="closeCartModal()">Fermer</button>
         </div>
     </div>
 
@@ -749,7 +958,7 @@
                     <label for="custComment">Commentaire / Instructions spécifiques</label>
                     <textarea id="custComment" class="form-control" autocomplete="off"></textarea>
                 </div>
-                <button type="submit" class="btn-submit" style="background: #4caf50; box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);" onclick="playHumSound()">Valider la commande</button>
+                <button type="submit" class="btn-submit" style="background: #4caf50; box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);">Valider la commande</button>
             </form>
         </div>
     </div>
@@ -761,30 +970,48 @@
             <div id="adminOrdersContainer" style="margin-bottom: 20px;">
                 <!-- Injecté dynamiquement -->
             </div>
-            <button class="btn-submit" style="background: #33333c; box-shadow: none;" onclick="playHumSound(); closeAdminOrdersModal()">Fermer</button>
+            <button class="btn-submit" style="background: #33333c; box-shadow: none;" onclick="closeAdminOrdersModal()">Fermer</button>
         </div>
     </div>
 
     <script>
-        let products = JSON.parse(localStorage.getItem('savedProducts')) || [];
+        // Système global Catégories et Produits imbriqués
+        let categories = JSON.parse(localStorage.getItem('savedCategories')) || [];
+        let currentCategoryId = null; // null signifie qu'on se trouve sur la liste des catégories
+
         let cart = []; 
         let adminOrders = JSON.parse(localStorage.getItem('adminOrders')) || []; 
         let selectedImageDataUrl = "";
+        let selectedCatImageDataUrl = "";
         let isAdmin = false;
-        let enteredCode = "";
-        let keypadMode = "admin";
+        
+        // Logique et variables du nouveau pavé numérique
+        let maxCodeLength = 4;
+        let currentCode = "";
+        let keypadMode = "admin"; // "admin" ou "quantity"
         let activeQtyProductId = null;
         let zoomedImageElement = null; 
+        let audioCtx = null;
+
+        // Variables de stockage temporaire pour l'élément à supprimer
+        let deletionTargetType = null; // "category" ou "product"
+        let deletionTargetId = null;
 
         const modalOverlay = document.getElementById('modalOverlay');
+        const categoryModalOverlay = document.getElementById('categoryModalOverlay');
         const keypadOverlay = document.getElementById('keypadOverlay');
-        const keypadDisplay = document.getElementById('keypadDisplay');
-        const keypadTitle = document.getElementById('keypadTitle');
+        const keypadTitleModel = document.getElementById('keypadTitleModel');
+        const dotDisplayCase = document.getElementById('dotDisplayCase');
         const adminToggleBtn = document.getElementById('adminToggleBtn');
         const adminDashboardPanel = document.getElementById('adminDashboardPanel');
         const gridProducts = document.getElementById('gridProducts');
         const productForm = document.getElementById('productForm');
+        const categoryForm = document.getElementById('categoryForm');
         const uploadStatus = document.getElementById('uploadStatus');
+        const catUploadStatus = document.getElementById('catUploadStatus');
+        const btnBackToCats = document.getElementById('btnBackToCats');
+        const appHeaderTitle = document.getElementById('appHeaderTitle');
+        const btnNewOrdersDot = document.getElementById('btnNewOrdersDot');
         
         const checkoutBar = document.getElementById('checkoutBar');
         const checkoutTotalDisplay = document.getElementById('checkoutTotalDisplay');
@@ -799,15 +1026,162 @@
         const adminOrdersContainer = document.getElementById('adminOrdersContainer');
         const zoomBackdrop = document.getElementById('zoomBackdrop');
 
-        // Audio Synth coupé (Désactivé à la demande de l'utilisateur)
-        function playHumSound() {
-            // Silence complet lors du clic sur les boutons
+        // Modale interne de confirmation de suppression
+        const deleteConfirmOverlay = document.getElementById('deleteConfirmOverlay');
+        const deleteConfirmMessage = document.getElementById('deleteConfirmMessage');
+        const btnConfirmDeleteAction = document.getElementById('btnConfirmDeleteAction');
+
+        // AUDIO ENGINE DU PAVÉ NUMÉRIQUE INDUSTRIEL
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            return audioCtx.currentTime;
         }
 
-        // Gestion de l'agrandissement d'image isolé et ultra-fluide
+        function playHumSound() {
+            try {
+                const now = initAudio(), duration = 0.250, gainNode = audioCtx.createGain();
+                gainNode.gain.setValueAtTime(0, now);
+                gainNode.gain.linearRampToValueAtTime(0.4, now + 0.005); 
+                gainNode.gain.setValueAtTime(0.4, now + duration - 0.040);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+                const osc1 = audioCtx.createOscillator(), osc2 = audioCtx.createOscillator();
+                osc1.type = 'sine'; osc1.frequency.setValueAtTime(100, now);
+                osc2.type = 'sine'; osc2.frequency.setValueAtTime(200, now);
+
+                osc1.connect(gainNode); osc2.connect(gainNode); gainNode.connect(audioCtx.destination);
+                osc1.start(now); osc2.start(now); osc1.stop(now + duration); osc2.stop(now + duration);
+            } catch (e) { console.error(e); }
+        }
+
+        function playDeleteSound() {
+            try {
+                const now = initAudio(), duration = 0.015, gainNode = audioCtx.createGain();
+                gainNode.gain.setValueAtTime(0, now);
+                gainNode.gain.linearRampToValueAtTime(0.5, now + 0.002);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+                const osc = audioCtx.createOscillator();
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(1400, now);
+                osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+                osc.start(now); osc.stop(now + duration);
+            } catch (e) { console.error(e); }
+        }
+
+        function playSuccessSound() {
+            try {
+                const now = initAudio(), duration = 0.300, gainNode = audioCtx.createGain();
+                gainNode.gain.setValueAtTime(0, now);
+                gainNode.gain.linearRampToValueAtTime(0.6, now + 0.008);
+                gainNode.gain.setValueAtTime(0.6, now + duration - 0.050);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+                const osc = audioCtx.createOscillator();
+                osc.type = 'sine'; osc.frequency.setValueAtTime(60, now);
+                osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+                osc.start(now); osc.stop(now + duration);
+            } catch (e) { console.error(e); }
+        }
+
+        // LOGIQUE INTERNE DE MISE À JOUR DES LEDS DYNAMIQUES
+        function updateDisplay() {
+            const dots = document.querySelectorAll('.dot');
+            dots.forEach((dot, index) => {
+                if (index < currentCode.length) dot.classList.add('active');
+                else dot.classList.remove('active');
+            });
+        }
+
+        function rebuildDisplayDots(count) {
+            dotDisplayCase.innerHTML = "";
+            for(let i=0; i<count; i++) {
+                const d = document.createElement('div');
+                d.className = 'dot';
+                dotDisplayCase.appendChild(d);
+            }
+        }
+
+        function pressKey(num) {
+            playHumSound();
+            if (currentCode.length < maxCodeLength) {
+                currentCode += num;
+                updateDisplay();
+            }
+        }
+
+        function deleteKey() {
+            playDeleteSound();
+            if (currentCode.length > 0) {
+                currentCode = currentCode.slice(0, -1);
+                updateDisplay();
+            }
+        }
+
+        // Gestion et mise à jour de l'indicateur point rouge pour les commandes non traitées
+        function updateNotificationDot() {
+            const hasNewOrders = adminOrders.some(o => o.status === 'new');
+            if (hasNewOrders) {
+                btnNewOrdersDot.style.display = 'inline';
+            } else {
+                btnNewOrdersDot.style.display = 'none';
+            }
+        }
+
+        function validateCode() {
+            if (keypadMode === "admin") {
+                if (currentCode === "1212") {
+                    playSuccessSound();
+                    isAdmin = true; 
+                    document.body.classList.add('is-admin');
+                    adminToggleBtn.textContent = "✓ Admin"; 
+                    adminToggleBtn.classList.add('logged-in');
+                    closeKeypadModal();
+                    updateNotificationDot();
+                    renderView();
+
+                    // Si présence de nouvelles commandes à l'ouverture, on lance le modal immédiatement
+                    const hasNewOrders = adminOrders.some(o => o.status === 'new');
+                    if (hasNewOrders) {
+                        openAdminOrdersModal('new');
+                    }
+                } else {
+                    playDeleteSound();
+                    const dots = document.querySelectorAll('.dot');
+                    dots.forEach(d => d.style.backgroundColor = "#ff4d4d");
+                    setTimeout(() => {
+                        currentCode = "";
+                        updateDisplay();
+                    }, 500);
+                }
+            } else if (keypadMode === "quantity") {
+                if (currentCode.length > 0 && parseInt(currentCode) > 0) {
+                    playSuccessSound();
+                    const cat = categories.find(c => c.id === currentCategoryId);
+                    if (cat && cat.products) {
+                        const targetProd = cat.products.find(p => p.id === activeQtyProductId);
+                        if (targetProd) {
+                            targetProd.selectedQty = parseInt(currentCode);
+                            localStorage.setItem('savedCategories', JSON.stringify(categories));
+                            renderView();
+                        }
+                    }
+                    closeKeypadModal();
+                } else {
+                    playDeleteSound();
+                }
+            }
+        }
+
+        // Action sur l'onglet spécial d'administration Station
+        function openStationPage() {
+            alert("Ouverture de la page Station (Espace d'administration dédié).");
+            // Sera rempli ultérieurement
+        }
+
+        // Gestion de l'agrandissement d'image isolé
         function toggleImageZoom(imgElement, event) {
             if (event) event.stopPropagation(); 
-            playHumSound();
 
             if (imgElement.classList.contains('fullscreen-zoom')) {
                 closeZoomedImage();
@@ -825,7 +1199,6 @@
 
         function closeZoomedImage() {
             if (zoomedImageElement) {
-                playHumSound();
                 const tileParent = zoomedImageElement.closest('.tile');
                 if (tileParent) tileParent.classList.remove('zoomed-in-active');
 
@@ -835,39 +1208,171 @@
             zoomBackdrop.classList.remove('visible');
         }
 
-        function renderGrid() {
+        // Logique d'affichage de la modale flottante interne de confirmation
+        function openDeleteConfirmModal(type, id, messageText) {
+            deletionTargetType = type;
+            deletionTargetId = id;
+            deleteConfirmMessage.textContent = messageText;
+            
+            // Attachement dynamique de l'action de validation finale
+            btnConfirmDeleteAction.onclick = executeDeletion;
+            
+            deleteConfirmOverlay.classList.add('open');
+        }
+
+        function closeDeleteConfirmModal() {
+            deleteConfirmOverlay.classList.remove('open');
+            deletionTargetType = null;
+            deletionTargetId = null;
+        }
+
+        function executeDeletion() {
+            if (deletionTargetType === 'category') {
+                categories = categories.filter(c => c.id !== deletionTargetId);
+                localStorage.setItem('savedCategories', JSON.stringify(categories));
+                showToastNotification("Catégorie supprimée", false);
+            } else if (deletionTargetType === 'product') {
+                const currentCat = categories.find(c => c.id === currentCategoryId);
+                if (currentCat && currentCat.products) {
+                    currentCat.products = currentCat.products.filter(p => p.id !== deletionTargetId);
+                    cart = cart.filter(item => item.id !== deletionTargetId);
+                    localStorage.setItem('savedCategories', JSON.stringify(categories));
+                    updateCheckoutBar();
+                    showToastNotification("Produit supprimé", false);
+                }
+            }
+            closeDeleteConfirmModal();
+            renderView();
+        }
+
+        // Déclencheurs initiaux de suppression branchés sur les boutons "×"
+        function deleteCategory(catId, event) {
+            if (event) event.stopPropagation();
+            const cat = categories.find(c => c.id === catId);
+            if (!cat) return;
+            
+            openDeleteConfirmModal(
+                'category', 
+                catId, 
+                `Voulez-vous vraiment supprimer définitivement la catégorie "${cat.name}" ainsi que tous ses produits ?`
+            );
+        }
+
+        function deleteProduct(prodId, event) {
+            if (event) event.stopPropagation();
+            const currentCat = categories.find(c => c.id === currentCategoryId);
+            if (!currentCat || !currentCat.products) return;
+            
+            const prod = currentCat.products.find(p => p.id === prodId);
+            if (!prod) return;
+
+            openDeleteConfirmModal(
+                'product', 
+                prodId, 
+                `Voulez-vous vraiment supprimer définitivement le produit "${prod.name}" ?`
+            );
+        }
+
+        // Routeur d'affichage principal
+        function renderView() {
+            if (currentCategoryId === null) {
+                renderCategoriesGrid();
+            } else {
+                renderProductsGrid();
+            }
+        }
+
+        // 1. Rendu des Catégories (2 colonnes)
+        function renderCategoriesGrid() {
+            btnBackToCats.style.display = 'none';
+            appHeaderTitle.textContent = "LD Holding";
             gridProducts.innerHTML = "";
-            products.forEach((product) => {
-                const hasQty = product.selectedQty && product.selectedQty > 0;
+
+            categories.forEach((cat) => {
                 const card = document.createElement('div');
                 card.className = 'product-card';
                 card.innerHTML = `
-                    <div class="tile">
-                        ${product.image ? `<img src="${product.image}" class="product-bg" onclick="toggleImageZoom(this, event)" alt="">` : ''}
+                    <button class="btn-delete-badge" onclick="deleteCategory(${cat.id}, event)">×</button>
+                    <div class="tile" onclick="navigateToCategory(${cat.id})">
+                        ${cat.image ? `<img src="${cat.image}" class="product-bg" alt="">` : ''}
                     </div>
                     <div class="product-meta">
-                        <div class="product-name-line">${product.name}</div>
-                        <div class="product-details-line">${parseFloat(product.price).toFixed(2)} DZD - Pack: ${product.qty}</div>
-                    </div>
-                    <div class="product-actions">
-                        <button class="btn-qty-action" onclick="playHumSound(); openQuantityKeypad(${product.id})">
-                            ${hasQty ? `Quantité: ${product.selectedQty}` : 'Quantité'}
-                        </button>
-                        <button class="btn-cart-action ${!hasQty ? 'disabled' : ''}" onclick="playHumSound(); addToCart(${product.id})">🛒</button>
+                        <div class="product-name-line" style="text-align:center; font-weight:700;">${cat.name}</div>
                     </div>
                 `;
                 gridProducts.appendChild(card);
             });
 
-            const nextIndex = products.length;
+            const nextIndex = categories.length;
             const addCard = document.createElement('div');
             addCard.className = 'product-card';
             addCard.innerHTML = `
-                <div class="tile active" id="tile-${nextIndex}">
-                    <div class="btn-add" onclick="playHumSound(); openProductModal(${nextIndex})">+</div>
+                <div class="tile active" id="tile-cat-${nextIndex}">
+                    <div class="btn-add" onclick="openCategoryModal()">+</div>
                 </div>
             `;
             gridProducts.appendChild(addCard);
+        }
+
+        // 2. Rendu des Produits d'une catégorie (2 colonnes)
+        function renderProductsGrid() {
+            btnBackToCats.style.display = 'block';
+            const currentCat = categories.find(c => c.id === currentCategoryId);
+            appHeaderTitle.textContent = currentCat ? currentCat.name : "Produits";
+            gridProducts.innerHTML = "";
+
+            const activeProducts = currentCat ? currentCat.products || [] : [];
+
+            activeProducts.forEach((product) => {
+                const hasQty = product.selectedQty && product.selectedQty > 0;
+                const isInCart = cart.some(item => item.id === product.id);
+                
+                // Formule de calcul exacte : prix de base x nombre de pack x quantité saisie
+                const displayTotalProduct = hasQty ? (parseFloat(product.price) * parseInt(product.qty) * parseInt(product.selectedQty)) : 0;
+
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.innerHTML = `
+                    <button class="btn-delete-badge" onclick="deleteProduct(${product.id}, event)">×</button>
+                    <div class="tile">
+                        ${product.image ? `<img src="${product.image}" class="product-bg" onclick="toggleImageZoom(this, event)" alt="">` : ''}
+                    </div>
+                    <div class="product-meta">
+                        <div class="product-name-line">${product.name}</div>
+                        <div class="product-details-line">
+                            ${hasQty ? `${displayTotalProduct.toFixed(2)} DZD` : `${parseFloat(product.price).toFixed(2)} DZD - Pack: ${product.qty}`}
+                        </div>
+                    </div>
+                    <div class="product-actions">
+                        <button class="btn-qty-action" onclick="openQuantityKeypad(${product.id})">
+                            ${hasQty ? `Quantité: ${product.selectedQty}` : 'Quantité'}
+                        </button>
+                        <button class="btn-cart-action ${!hasQty ? 'disabled' : ''} ${isInCart ? 'in-cart' : ''}" onclick="addToCart(${product.id})">🛒</button>
+                    </div>
+                `;
+                gridProducts.appendChild(card);
+            });
+
+            const nextIndex = activeProducts.length;
+            const addCard = document.createElement('div');
+            addCard.className = 'product-card';
+            addCard.innerHTML = `
+                <div class="tile active" id="tile-prod-${nextIndex}">
+                    <div class="btn-add" onclick="openProductModal()">+</div>
+                </div>
+            `;
+            gridProducts.appendChild(addCard);
+        }
+
+        // Navigation
+        function navigateToCategory(catId) {
+            currentCategoryId = catId;
+            renderView();
+        }
+
+        function navigateToCategories() {
+            currentCategoryId = null;
+            renderView();
         }
 
         function handleAdminButtonClick() {
@@ -876,56 +1381,51 @@
                 document.body.classList.remove('is-admin');
                 adminToggleBtn.textContent = "Admin";
                 adminToggleBtn.classList.remove('logged-in');
+                renderView();
             } else {
-                keypadMode = "admin"; keypadTitle.textContent = "Code Administrateur";
-                keypadTitle.style.color = "#ff9f43"; enteredCode = "";
-                keypadDisplay.textContent = ""; keypadOverlay.classList.add('open');
+                keypadMode = "admin"; 
+                maxCodeLength = 4;
+                keypadTitleModel.textContent = "Code d'Accès";
+                rebuildDisplayDots(4);
+                currentCode = ""; 
+                updateDisplay(); 
+                keypadOverlay.classList.add('open');
             }
         }
 
         function openQuantityKeypad(productId) {
-            keypadMode = "quantity"; activeQtyProductId = productId;
-            keypadTitle.textContent = "Saisir Quantité"; keypadTitle.style.color = "#00adb5";
-            enteredCode = ""; keypadDisplay.textContent = ""; keypadOverlay.classList.add('open');
+            keypadMode = "quantity"; 
+            activeQtyProductId = productId;
+            maxCodeLength = 5; 
+            keypadTitleModel.textContent = "Saisir Quantité";
+            rebuildDisplayDots(5);
+            currentCode = ""; 
+                updateDisplay(); 
+            keypadOverlay.classList.add('open');
         }
 
         function closeKeypadModal() { keypadOverlay.classList.remove('open'); }
+        
+        // Modals Catégories
+        function openCategoryModal() { categoryModalOverlay.classList.add('open'); }
+        function closeCategoryModal(event) { categoryModalOverlay.classList.remove('open'); resetCategoryForm(); }
+        
+        // Modals Produits
+        function openProductModal() { modalOverlay.classList.add('open'); }
+        function closeProductModal(event) { modalOverlay.classList.remove('open'); resetForm(); }
 
-        function pressKey(key) {
-            if (key === 'C') {
-                enteredCode = ""; keypadDisplay.textContent = "";
-            } else if (key === 'E') {
-                if (keypadMode === "admin") {
-                    if (enteredCode === "1212") {
-                        isAdmin = true; document.body.classList.add('is-admin');
-                        adminToggleBtn.textContent = "✓ Admin"; adminToggleBtn.classList.add('logged-in');
-                        closeKeypadModal();
-                    } else {
-                        keypadDisplay.textContent = "ERREUR"; enteredCode = "";
-                        setTimeout(() => { keypadDisplay.textContent = ""; }, 800);
-                    }
-                } else if (keypadMode === "quantity") {
-                    if (enteredCode.length > 0 && parseInt(enteredCode) > 0) {
-                        const targetProd = products.find(p => p.id === activeQtyProductId);
-                        if (targetProd) {
-                            targetProd.selectedQty = parseInt(enteredCode);
-                            localStorage.setItem('savedProducts', JSON.stringify(products));
-                            renderGrid();
-                        }
-                        closeKeypadModal();
-                    }
-                }
-            } else {
-                if (keypadMode === "admin" && enteredCode.length < 4) {
-                    enteredCode += key; keypadDisplay.textContent = "*".repeat(enteredCode.length);
-                } else if (keypadMode === "quantity" && enteredCode.length < 5) {
-                    enteredCode += key; keypadDisplay.textContent = enteredCode;
-                }
+        // Fichiers Images
+        function handleCatFileChange(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    selectedCatImageDataUrl = e.target.result;
+                    catUploadStatus.textContent = "✓ Image chargée"; catUploadStatus.style.color = "#4caf50";
+                };
+                reader.readAsDataURL(file);
             }
         }
-
-        function openProductModal(index) { modalOverlay.classList.add('open'); }
-        function closeProductModal(event) { modalOverlay.classList.remove('open'); resetForm(); }
 
         function handleFileChange(event) {
             const file = event.target.files[0];
@@ -939,9 +1439,33 @@
             }
         }
 
+        function resetCategoryForm() {
+            categoryForm.reset(); selectedCatImageDataUrl = "";
+            catUploadStatus.textContent = "📸 Ajouter une photo"; catUploadStatus.style.color = "#00adb5";
+        }
+
         function resetForm() {
             productForm.reset(); selectedImageDataUrl = "";
             uploadStatus.textContent = "📸 Ajouter une photo"; uploadStatus.style.color = "#00adb5";
+        }
+
+        // Submissions Formulaires
+        function handleCategoryFormSubmit(event) {
+            event.preventDefault();
+            const name = document.getElementById('catName').value;
+
+            const newCategory = {
+                id: Date.now(),
+                name: name,
+                image: selectedCatImageDataUrl,
+                products: []
+            };
+
+            categories.push(newCategory);
+            localStorage.setItem('savedCategories', JSON.stringify(categories));
+            renderView();
+            categoryModalOverlay.classList.remove('open');
+            resetCategoryForm();
         }
 
         function handleFormSubmit(event) {
@@ -953,15 +1477,24 @@
             const newProduct = {
                 id: Date.now(), name: name, qty: qty, price: price, image: selectedImageDataUrl, selectedQty: 0
             };
-            products.push(newProduct);
-            localStorage.setItem('savedProducts', JSON.stringify(products));
-            renderGrid();
+
+            const currentCat = categories.find(c => c.id === currentCategoryId);
+            if (currentCat) {
+                if (!currentCat.products) currentCat.products = [];
+                currentCat.products.push(newProduct);
+                localStorage.setItem('savedCategories', JSON.stringify(categories));
+            }
+            
+            renderView();
             modalOverlay.classList.remove('open');
             resetForm();
         }
 
         function addToCart(productId) {
-            const prod = products.find(p => p.id === productId);
+            const currentCat = categories.find(c => c.id === currentCategoryId);
+            if (!currentCat || !currentCat.products) return;
+
+            const prod = currentCat.products.find(p => p.id === productId);
             if (!prod) return;
 
             const qtyToOrder = prod.selectedQty || 0;
@@ -970,25 +1503,27 @@
                 return;
             }
 
-            const itemPrice = parseFloat(prod.price);
-            const totalItemPrice = itemPrice * qtyToOrder;
-
+            // Calcul du montant exact : prix x nombre de pack x quantité
+            const totalItemPrice = parseFloat(prod.price) * parseInt(prod.qty) * qtyToOrder;
             const existingIndex = cart.findIndex(item => item.id === productId);
+            
             if (existingIndex > -1) {
-                cart[existingIndex].orderQty += qtyToOrder;
-                cart[existingIndex].totalItemPrice += totalItemPrice;
+                cart.splice(existingIndex, 1);
+                showToastNotification("Produit retiré du panier.", false);
             } else {
                 cart.push({
                     id: prod.id,
                     name: prod.name,
-                    price: itemPrice,
+                    price: parseFloat(prod.price),
+                    packQty: parseInt(prod.qty),
                     orderQty: qtyToOrder,
                     totalItemPrice: totalItemPrice
                 });
+                showToastNotification("Produit ajouté au panier.", false);
             }
 
             updateCheckoutBar();
-            showToastNotification("Produit ajouté au panier.", false);
+            renderView();
         }
 
         function showToastNotification(message, isWarning = false) {
@@ -1025,7 +1560,7 @@
                     row.innerHTML = `
                         <div class="cart-item-info">
                             <div class="cart-item-title">${item.name}</div>
-                            <div class="cart-item-sub">Quantité: ${item.orderQty} × ${item.price.toFixed(2)} DZD</div>
+                            <div class="cart-item-sub">Quantité: ${item.orderQty} × Pack (${item.packQty}) × ${item.price.toFixed(2)} DZD</div>
                         </div>
                         <div class="cart-item-price">${item.totalItemPrice.toFixed(2)} DZD</div>
                     `;
@@ -1071,11 +1606,14 @@
             localStorage.setItem('adminOrders', JSON.stringify(adminOrders));
 
             cart = [];
-            products.forEach(p => p.selectedQty = 0);
-            localStorage.setItem('savedProducts', JSON.stringify(products));
+            categories.forEach(c => {
+                if (c.products) c.products.forEach(p => p.selectedQty = 0);
+            });
+            localStorage.setItem('savedCategories', JSON.stringify(categories));
             
             updateCheckoutBar();
-            renderGrid();
+            updateNotificationDot();
+            renderView();
             closeCustomerDetailsModal();
 
             setTimeout(() => {
@@ -1125,8 +1663,8 @@
                         
                         ${filterType === 'new' ? `
                             <div class="order-actions-row">
-                                <a href="tel:${order.client.phone}" class="btn-order-call" onclick="playHumSound()">📞</a>
-                                <button class="btn-order-ok" onclick="playHumSound(); markOrderAsDone(${order.orderId})">OK</button>
+                                <a href="tel:${order.client.phone}" class="btn-order-call">📞</a>
+                                <button class="btn-order-ok" onclick="markOrderAsDone(${order.orderId})">OK</button>
                             </div>
                         ` : ''}
                     `;
@@ -1143,13 +1681,14 @@
             if (target) {
                 target.status = 'done';
                 localStorage.setItem('adminOrders', JSON.stringify(adminOrders));
+                updateNotificationDot();
                 openAdminOrdersModal('new'); 
                 showToastNotification("Commande déplacée vers traitées.", false);
             }
         }
 
-        // Initialisation globale
-        renderGrid();
+        // Initialisation globale au chargement
+        renderView();
     </script>
 
 <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));}</script>
