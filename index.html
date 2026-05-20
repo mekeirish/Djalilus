@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>LD Holding</title>
+    <!-- Ajout de SheetJS pour la gestion Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
         import { getDatabase, ref, onValue, set, update } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
@@ -1074,6 +1076,9 @@
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#4b6cb7">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4b6cb7">
 <link rel="apple-touch-icon" href="icon.png"></head>
 <body>
 
@@ -1325,7 +1330,21 @@
     <div class="modal-overlay" id="stationOverlay" onclick="closeStationPage()">
         <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 460px;">
             <div class="modal-title" style="color: #ff9f43;">Administration Station</div>
-            <div id="stationCategoriesContainer" style="margin-bottom: 20px; max-height: 60vh; overflow-y: auto;">
+            
+            <!-- NOUVEAU : Zone d'import/export Excel -->
+            <div style="background: #1e1e24; padding: 15px; border-radius: 12px; margin-bottom: 20px;">
+                <label style="display:block; font-size: 0.8rem; color:#a0a0aa; margin-bottom:8px;">Sélectionner la catégorie :</label>
+                <select id="importCategorySelect" class="form-control" style="margin-bottom: 10px;">
+                    <option value="">-- Choisir une catégorie --</option>
+                </select>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="downloadTemplate()" style="flex:1; background:#33333c; border:1px solid #444450; color:#fff; padding:10px; border-radius:8px; cursor:pointer; font-size: 0.8rem;">Modèle ↓</button>
+                    <input type="file" id="excelImportInput" accept=".xlsx, .xls" style="display:none" onchange="handleExcelImport(event)">
+                    <button onclick="document.getElementById('excelImportInput').click()" style="flex:1; background:#00adb5; border:none; color:#fff; padding:10px; border-radius:8px; cursor:pointer; font-size: 0.8rem;">Importer ↑</button>
+                </div>
+            </div>
+
+            <div id="stationCategoriesContainer" style="margin-bottom: 20px; max-height: 50vh; overflow-y: auto;">
                 <!-- Injecté dynamiquement -->
             </div>
             <button class="btn-submit" style="background: #33333c; box-shadow: none;" onclick="closeStationPage()">Fermer</button>
@@ -1400,6 +1419,54 @@
         const deleteConfirmOverlay = document.getElementById('deleteConfirmOverlay');
         const deleteConfirmMessage = document.getElementById('deleteConfirmMessage');
         const btnConfirmDeleteAction = document.getElementById('btnConfirmDeleteAction');
+
+        // ==================== FONCTIONS EXCEL ====================
+        function downloadTemplate() {
+            const header = [["Nom du produit", "Quantité dans le carton", "Prix (DZD)"]];
+            const ws = XLSX.utils.aoa_to_sheet(header);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Produits");
+            XLSX.writeFile(wb, "Modele_Produits.xlsx");
+        }
+
+        function handleExcelImport(e) {
+            const catSelect = document.getElementById('importCategorySelect');
+            if(!catSelect.value) {
+                showToastNotification("Veuillez choisir une catégorie d'abord !", true);
+                return;
+            }
+
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                const data = new Uint8Array(evt.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const json = XLSX.utils.sheet_to_json(sheet);
+
+                const targetCat = categories.find(c => c.id == catSelect.value);
+                if(targetCat) {
+                    json.forEach(row => {
+                        const newProd = {
+                            id: Date.now() + Math.floor(Math.random() * 1000),
+                            name: row["Nom du produit"] || "Nouveau Produit",
+                            qty: row["Quantité dans le carton"] || 1,
+                            price: row["Prix (DZD)"] || 0,
+                            image: "",
+                            selectedQty: 0,
+                            visible: true
+                        };
+                        if(!targetCat.products) targetCat.products = [];
+                        targetCat.products.push(newProd);
+                    });
+                    saveCategoriesToFirebase();
+                    renderView();
+                    showToastNotification("Importation réussie !", false);
+                    document.getElementById('excelImportInput').value = "";
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
 
         // ==================== FIREBASE SYNCHRONIZATION ====================
         function initFirebaseSync() {
@@ -1667,6 +1734,16 @@
         function openStationPage() {
             renderStationCategories();
             document.getElementById('stationOverlay').classList.add('open');
+            
+            // Mettre à jour la dropdown de sélection
+            const select = document.getElementById('importCategorySelect');
+            select.innerHTML = '<option value="">-- Choisir une catégorie --</option>';
+            categories.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat.id;
+                opt.textContent = cat.name;
+                select.appendChild(opt);
+            });
         }
 
         function closeStationPage() {
@@ -2505,6 +2582,7 @@
     </script>
 
 <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));}</script>
+
 
 <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));}</script>
 </body>
