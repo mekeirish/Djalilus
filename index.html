@@ -6,7 +6,7 @@
     <title>LD Holding</title>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getDatabase } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+        import { getDatabase, ref, onValue, set, update } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBauxPkS-FXjCSErcluaOlReANeOL0vPEs",
@@ -19,6 +19,10 @@
         };
         const app = initializeApp(firebaseConfig);
         window.db = getDatabase(app);
+        window.dbRef = ref;
+        window.dbOnValue = onValue;
+        window.dbSet = set;
+        window.dbUpdate = update;
     </script>
     <style>
         /* Configuration de base pour smartphone */
@@ -1061,6 +1065,9 @@
 
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#4b6cb7">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4b6cb7">
 <link rel="apple-touch-icon" href="icon.png"></head>
 <body>
 
@@ -1274,7 +1281,7 @@
 
     <script>
         // Système global Catégories et Produits imbriqués
-        let categories = JSON.parse(localStorage.getItem('savedCategories')) || [];
+        let categories = JSON.parse(localStorage.getItem('savedCategories')) || []; 
         let currentCategoryId = null; 
 
         let cart = []; 
@@ -1329,6 +1336,87 @@
         const deleteConfirmOverlay = document.getElementById('deleteConfirmOverlay');
         const deleteConfirmMessage = document.getElementById('deleteConfirmMessage');
         const btnConfirmDeleteAction = document.getElementById('btnConfirmDeleteAction');
+
+        // ==================== FIREBASE SYNCHRONIZATION ====================
+        function initFirebaseSync() {
+            if (!window.db) {
+                renderView();
+                return;
+            }
+            
+            const categoriesRef = window.dbRef(window.db, 'data/categories');
+            const ordersRef = window.dbRef(window.db, 'data/orders');
+            
+            // Écouter les changements des catégories en temps réel
+            window.dbOnValue(categoriesRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    // Convertir l'objet Firebase en array si nécessaire
+                    if (Array.isArray(data)) {
+                        categories = data;
+                    } else if (typeof data === 'object' && data !== null) {
+                        categories = Object.values(data);
+                    } else {
+                        categories = [];
+                    }
+                    // Mettre à jour localStorage avec les données Firebase
+                    localStorage.setItem('savedCategories', JSON.stringify(categories));
+                }
+                renderView();
+            }, (error) => {
+                console.error("Erreur Firebase catégories:", error);
+                renderView();
+            });
+            
+            // Écouter les changements des commandes en temps réel
+            window.dbOnValue(ordersRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    // Convertir l'objet Firebase en array si nécessaire
+                    if (Array.isArray(data)) {
+                        adminOrders = data;
+                    } else if (typeof data === 'object' && data !== null) {
+                        adminOrders = Object.values(data);
+                    } else {
+                        adminOrders = [];
+                    }
+                    // Mettre à jour localStorage avec les données Firebase
+                    localStorage.setItem('adminOrders', JSON.stringify(adminOrders));
+                }
+                updateNotificationDot();
+            }, (error) => {
+                console.error("Erreur Firebase commandes:", error);
+                updateNotificationDot();
+            });
+        }
+
+        function saveCategoriesToFirebase() {
+            if (!window.db) {
+                localStorage.setItem('savedCategories', JSON.stringify(categories));
+                return;
+            }
+            // Sauvegarder d'abord en localStorage (fallback certain)
+            localStorage.setItem('savedCategories', JSON.stringify(categories));
+            
+            const categoriesRef = window.dbRef(window.db, 'data/categories');
+            window.dbSet(categoriesRef, categories).catch(err => {
+                console.error("Erreur sauvegarde catégories Firebase:", err);
+            });
+        }
+
+        function saveOrdersToFirebase() {
+            if (!window.db) {
+                localStorage.setItem('adminOrders', JSON.stringify(adminOrders));
+                return;
+            }
+            // Sauvegarder d'abord en localStorage (fallback certain)
+            localStorage.setItem('adminOrders', JSON.stringify(adminOrders));
+            
+            const ordersRef = window.dbRef(window.db, 'data/orders');
+            window.dbSet(ordersRef, adminOrders).catch(err => {
+                console.error("Erreur sauvegarde commandes Firebase:", err);
+            });
+        }
 
         // Fonctions utilitaires de redimensionnement d'image
         function resizeImage(file, callback) {
@@ -1500,7 +1588,7 @@
                         const targetProd = cat.products.find(p => p.id === activeQtyProductId);
                         if (targetProd) {
                             targetProd.selectedQty = parseInt(currentCode);
-                            localStorage.setItem('savedCategories', JSON.stringify(categories));
+                            saveCategoriesToFirebase();
                             renderView();
                         }
                     }
@@ -1594,7 +1682,7 @@
             const prod = cat.products.find(p => p.id === prodId);
             if (prod) {
                 prod.visible = (prod.visible === false) ? true : false;
-                localStorage.setItem('savedCategories', JSON.stringify(categories));
+                saveCategoriesToFirebase();
                 renderStationCategories();
                 renderView();
             }
@@ -1653,14 +1741,14 @@
         function executeDeletion() {
             if (deletionTargetType === 'category') {
                 categories = categories.filter(c => c.id !== deletionTargetId);
-                localStorage.setItem('savedCategories', JSON.stringify(categories));
+                saveCategoriesToFirebase();
                 showToastNotification("Catégorie supprimée", false);
             } else if (deletionTargetType === 'product') {
                 const currentCat = categories.find(c => c.id === currentCategoryId);
                 if (currentCat && currentCat.products) {
                     currentCat.products = currentCat.products.filter(p => p.id !== deletionTargetId);
                     cart = cart.filter(item => item.id !== deletionTargetId);
-                    localStorage.setItem('savedCategories', JSON.stringify(categories));
+                    saveCategoriesToFirebase();
                     updateCheckoutBar();
                     showToastNotification("Produit supprimé", false);
                 }
@@ -1713,7 +1801,7 @@
                 if (target) {
                     target.status = 'delivered';
                     target.deliveryDate = new Date().toLocaleDateString('fr-FR', {hour: '2-digit', minute:'2-digit'}) + ' le ' + new Date().toLocaleDateString('fr-FR');
-                    localStorage.setItem('adminOrders', JSON.stringify(adminOrders));
+                    saveOrdersToFirebase();
                     updateNotificationDot();
                     closeAccomplishConfirmModal();
                     openAdminOrdersModal('done'); 
@@ -1724,6 +1812,9 @@
 
         // Routeur d'affichage principal
         function renderView() {
+            if (!categories || !Array.isArray(categories)) {
+                categories = [];
+            }
             if (currentCategoryId === null) {
                 renderCategoriesGrid();
             } else {
@@ -1736,6 +1827,20 @@
             btnBackToCats.style.display = 'none';
             appHeaderTitle.textContent = "LD Holding";
             gridProducts.innerHTML = "";
+
+            if (!categories || categories.length === 0) {
+                // Afficher au moins le bouton + même si vide
+                const nextIndex = 0;
+                const addCard = document.createElement('div');
+                addCard.className = 'product-card';
+                addCard.innerHTML = `
+                    <div class="tile active" id="tile-cat-0">
+                        <div class="btn-add" onclick="openCategoryModal()">+</div>
+                    </div>
+                `;
+                gridProducts.appendChild(addCard);
+                return;
+            }
 
             categories.forEach((cat) => {
                 const card = document.createElement('div');
@@ -1770,7 +1875,32 @@
             appHeaderTitle.textContent = currentCat ? currentCat.name : "Produits";
             gridProducts.innerHTML = "";
 
-            const activeProducts = currentCat ? currentCat.products || [] : [];
+            if (!currentCat) {
+                const addCard = document.createElement('div');
+                addCard.className = 'product-card';
+                addCard.innerHTML = `
+                    <div class="tile active" id="tile-prod-0">
+                        <div class="btn-add" onclick="openProductModal()">+</div>
+                    </div>
+                `;
+                gridProducts.appendChild(addCard);
+                return;
+            }
+
+            const activeProducts = currentCat.products || [];
+
+            if (activeProducts.length === 0 && !isAdmin) {
+                // Aucun produit visible pour les utilisateurs
+                const addCard = document.createElement('div');
+                addCard.className = 'product-card';
+                addCard.innerHTML = `
+                    <div class="tile active" id="tile-prod-0">
+                        <div class="btn-add" onclick="openProductModal()">+</div>
+                    </div>
+                `;
+                gridProducts.appendChild(addCard);
+                return;
+            }
 
             activeProducts.forEach((product) => {
                 const isVisible = product.visible !== false;
@@ -1906,7 +2036,7 @@
             };
 
             categories.push(newCategory);
-            localStorage.setItem('savedCategories', JSON.stringify(categories));
+            saveCategoriesToFirebase();
             renderView();
             categoryModalOverlay.classList.remove('open');
             resetCategoryForm();
@@ -1934,7 +2064,7 @@
 
             if (!currentCat.products) currentCat.products = [];
             currentCat.products.push(newProduct);
-            localStorage.setItem('savedCategories', JSON.stringify(categories));
+            saveCategoriesToFirebase();
             
             renderView();
             modalOverlay.classList.remove('open');
@@ -2064,13 +2194,13 @@
             };
 
             adminOrders.push(finalOrder);
-            localStorage.setItem('adminOrders', JSON.stringify(adminOrders));
+            saveOrdersToFirebase();
 
             cart = [];
             categories.forEach(c => {
                 if (c.products) c.products.forEach(p => p.selectedQty = 0);
             });
-            localStorage.setItem('savedCategories', JSON.stringify(categories));
+            saveCategoriesToFirebase();
             
             updateCheckoutBar();
             updateNotificationDot();
@@ -2151,7 +2281,7 @@
             const target = adminOrders.find(o => o.orderId === orderId);
             if (target) {
                 target.status = 'done';
-                localStorage.setItem('adminOrders', JSON.stringify(adminOrders));
+                saveOrdersToFirebase();
                 updateNotificationDot();
                 openAdminOrdersModal('new'); 
                 showToastNotification("Commande déplacée vers traitées.", false);
@@ -2160,7 +2290,12 @@
 
         // Initialisation globale au chargement
         renderView();
+        setTimeout(() => {
+            initFirebaseSync();
+        }, 100);
     </script>
+
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));}</script>
 
 <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));}</script>
 </body>
