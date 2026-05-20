@@ -1074,9 +1074,7 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#4b6cb7">
 <link rel="apple-touch-icon" href="icon.png">
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#4b6cb7">
-<link rel="apple-touch-icon" href="icon.png">
+
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#4b6cb7">
 <link rel="apple-touch-icon" href="icon.png"></head>
@@ -1385,6 +1383,7 @@
         // Variables pour long press detection
         let longPressTimer = null;
         let longPressStarted = false;
+        let isLongPress = false; // Flag pour protéger les clics après long press
 
         const modalOverlay = document.getElementById('modalOverlay');
         const categoryModalOverlay = document.getElementById('categoryModalOverlay');
@@ -1837,10 +1836,11 @@
 
         // Long press detection pour suppression
         function startLongPress(event, catId, prodId) {
-            event.preventDefault();
+            isLongPress = false; 
             longPressStarted = true;
             longPressTimer = setTimeout(() => {
                 if (longPressStarted) {
+                    isLongPress = true;
                     openDeleteProductStationModal(catId, prodId);
                 }
             }, 500);
@@ -1856,6 +1856,7 @@
 
         // Édition de produit station
         function openEditProductStationModal(catId, prodId) {
+            if (isLongPress) return;
             endLongPress();
             const cat = categories.find(c => c.id === catId);
             if (!cat || !cat.products) return;
@@ -2580,9 +2581,6 @@
             initFirebaseSync();
         }, 100);
     </script>
-
-<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));}</script>
-
 
 <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));}</script>
 </body>
