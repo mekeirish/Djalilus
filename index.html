@@ -960,6 +960,24 @@
         .btn-station-toggle.hidden-red {
             background: #ff4d4d;
         }
+        
+        /* Nouveau bouton toggle Prix */
+        .btn-price-toggle {
+            width: 40px;
+            height: 40px;
+            background: #ffdb13;
+            color: #1e1e24;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(255, 219, 19, 0.3);
+        }
 
         /* ==========================================================================
            OVERRIDES POUR LE MODE LIGHT
@@ -1329,6 +1347,8 @@
         <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 460px;">
             <div class="modal-title" style="color: #ff9f43;">Administration Station</div>
             
+            <button id="btnPriceToggle" class="btn-price-toggle" onclick="togglePrices()">$</button>
+
             <!-- NOUVEAU : Zone d'import/export Excel -->
             <div style="background: #1e1e24; padding: 15px; border-radius: 12px; margin-bottom: 20px;">
                 <label style="display:block; font-size: 0.8rem; color:#a0a0aa; margin-bottom:8px;">Sélectionner la catégorie :</label>
@@ -1353,6 +1373,7 @@
         // Système global Catégories et Produits imbriqués
         let categories = JSON.parse(localStorage.getItem('savedCategories')) || []; 
         let currentCategoryId = null; 
+        let arePricesVisible = JSON.parse(localStorage.getItem('arePricesVisible') || 'true');
 
         let cart = []; 
         let adminOrders = JSON.parse(localStorage.getItem('adminOrders')) || []; 
@@ -1383,7 +1404,7 @@
         // Variables pour long press detection
         let longPressTimer = null;
         let longPressStarted = false;
-        let isLongPress = false; // Flag pour protéger les clics après long press
+        let isLongPress = false; 
 
         const modalOverlay = document.getElementById('modalOverlay');
         const categoryModalOverlay = document.getElementById('categoryModalOverlay');
@@ -1414,10 +1435,22 @@
         const adminOrdersContainer = document.getElementById('adminOrdersContainer');
         const zoomBackdrop = document.getElementById('zoomBackdrop');
 
-        // Modale interne de confirmation de suppression
         const deleteConfirmOverlay = document.getElementById('deleteConfirmOverlay');
         const deleteConfirmMessage = document.getElementById('deleteConfirmMessage');
         const btnConfirmDeleteAction = document.getElementById('btnConfirmDeleteAction');
+
+        // ==================== FONCTIONS PRIX ====================
+        function togglePrices() {
+            arePricesVisible = !arePricesVisible;
+            localStorage.setItem('arePricesVisible', arePricesVisible);
+            
+            // Mise à jour visuelle du bouton
+            const btn = document.getElementById('btnPriceToggle');
+            if(btn) btn.style.opacity = arePricesVisible ? "1" : "0.5";
+            
+            renderView();
+            updateCheckoutBar();
+        }
 
         // ==================== FONCTIONS EXCEL ====================
         function downloadTemplate() {
@@ -1477,11 +1510,9 @@
             const categoriesRef = window.dbRef(window.db, 'data/categories');
             const ordersRef = window.dbRef(window.db, 'data/orders');
             
-            // Écouter les changements des catégories en temps réel
             window.dbOnValue(categoriesRef, (snapshot) => {
                 if (snapshot.exists()) {
                     const data = snapshot.val();
-                    // Convertir l'objet Firebase en array si nécessaire
                     if (Array.isArray(data)) {
                         categories = data;
                     } else if (typeof data === 'object' && data !== null) {
@@ -1489,7 +1520,6 @@
                     } else {
                         categories = [];
                     }
-                    // Mettre à jour localStorage avec les données Firebase
                     localStorage.setItem('savedCategories', JSON.stringify(categories));
                 }
                 renderView();
@@ -1498,11 +1528,9 @@
                 renderView();
             });
             
-            // Écouter les changements des commandes en temps réel
             window.dbOnValue(ordersRef, (snapshot) => {
                 if (snapshot.exists()) {
                     const data = snapshot.val();
-                    // Convertir l'objet Firebase en array si nécessaire
                     if (Array.isArray(data)) {
                         adminOrders = data;
                     } else if (typeof data === 'object' && data !== null) {
@@ -1510,7 +1538,6 @@
                     } else {
                         adminOrders = [];
                     }
-                    // Mettre à jour localStorage avec les données Firebase
                     localStorage.setItem('adminOrders', JSON.stringify(adminOrders));
                 }
                 updateNotificationDot();
@@ -1525,7 +1552,6 @@
                 localStorage.setItem('savedCategories', JSON.stringify(categories));
                 return;
             }
-            // Sauvegarder d'abord en localStorage (fallback certain)
             localStorage.setItem('savedCategories', JSON.stringify(categories));
             
             const categoriesRef = window.dbRef(window.db, 'data/categories');
@@ -1539,7 +1565,6 @@
                 localStorage.setItem('adminOrders', JSON.stringify(adminOrders));
                 return;
             }
-            // Sauvegarder d'abord en localStorage (fallback certain)
             localStorage.setItem('adminOrders', JSON.stringify(adminOrders));
             
             const ordersRef = window.dbRef(window.db, 'data/orders');
@@ -1548,7 +1573,6 @@
             });
         }
 
-        // Fonctions utilitaires de redimensionnement d'image
         function resizeImage(file, callback) {
             const reader = new FileReader();
             reader.readAsDataURL(file);
@@ -1568,12 +1592,10 @@
             };
         }
 
-        // Fonction de bascule de thèmes (Light / Dark)
         function toggleTheme() {
             document.body.classList.toggle('light-mode');
         }
 
-        // AUDIO ENGINE DU PAVÉ NUMÉRIQUE INDUSTRIEL
         function initAudio() {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -1626,7 +1648,6 @@
             } catch (e) { console.error(e); }
         }
 
-        // LOGIQUE ADAPTATIVE DE MISE À ZONE D'AFFICHAGE
         function updateDisplay() {
             if (keypadMode === "admin") {
                 const dots = document.querySelectorAll('.dot');
@@ -1729,12 +1750,10 @@
             }
         }
 
-        // Action sur l'onglet spécial d'administration Station
         function openStationPage() {
             renderStationCategories();
             document.getElementById('stationOverlay').classList.add('open');
             
-            // Mettre à jour la dropdown de sélection
             const select = document.getElementById('importCategorySelect');
             select.innerHTML = '<option value="">-- Choisir une catégorie --</option>';
             categories.forEach(cat => {
@@ -1743,6 +1762,9 @@
                 opt.textContent = cat.name;
                 select.appendChild(opt);
             });
+            
+            const btn = document.getElementById('btnPriceToggle');
+            if(btn) btn.style.opacity = arePricesVisible ? "1" : "0.5";
         }
 
         function closeStationPage() {
@@ -1752,7 +1774,6 @@
         function renderStationCategories() {
             const container = document.getElementById('stationCategoriesContainer');
             
-            // Sauvegarder l'état ouvert/fermé des accordions avant le rendu
             const openPanels = {};
             categories.forEach(cat => {
                 const p = document.getElementById(`station-panel-${cat.id}`);
@@ -1834,7 +1855,6 @@
             toggleProductVisibility(currentCategoryId, prodId);
         }
 
-        // Long press detection pour suppression
         function startLongPress(event, catId, prodId) {
             isLongPress = false; 
             longPressStarted = true;
@@ -1854,7 +1874,6 @@
             }
         }
 
-        // Édition de produit station
         function openEditProductStationModal(catId, prodId) {
             if (isLongPress) return;
             endLongPress();
@@ -1920,7 +1939,6 @@
             const newQty = document.getElementById('editProdQty').value;
             const newPrice = document.getElementById('editProdPrice').value;
 
-            // Vérifier doublon (sauf si même produit)
             const exists = cat.products.some(p => p.id !== editingStationProductId && p.name.toLowerCase() === newName.toLowerCase());
             if (exists) {
                 showToastNotification("Un produit avec ce nom existe déjà !", true);
@@ -1940,7 +1958,6 @@
             showToastNotification("Produit modifié avec succès !", false);
         }
 
-        // Suppression de produit station
         function openDeleteProductStationModal(catId, prodId) {
             const cat = categories.find(c => c.id === catId);
             if (!cat || !cat.products) return;
@@ -1981,7 +1998,6 @@
             showToastNotification(`Produit "${prodName}" supprimé !`, false);
         }
 
-        // Gestion de l'agrandissement d'image isolé
         function toggleImageZoom(imgElement, event) {
             if (event) event.stopPropagation(); 
 
@@ -2010,7 +2026,6 @@
             zoomBackdrop.classList.remove('visible');
         }
 
-        // Logique d'affichage de la modale flottante interne de confirmation
         function openDeleteConfirmModal(type, id, messageText) {
             deletionTargetType = type;
             deletionTargetId = id;
@@ -2071,7 +2086,6 @@
             );
         }
 
-        // Confirmation interne de Commande Accomplie
         function askAccomplishOrder(orderId) {
             accomplishTargetId = orderId;
             document.getElementById('accomplishConfirmOverlay').classList.add('open');
@@ -2097,7 +2111,6 @@
             }
         }
 
-        // Routeur d'affichage principal
         function renderView() {
             if (!categories || !Array.isArray(categories)) {
                 categories = [];
@@ -2109,15 +2122,12 @@
             }
         }
 
-        // 1. Rendu des Catégories (2 colonnes)
         function renderCategoriesGrid() {
             btnBackToCats.style.display = 'none';
             appHeaderTitle.textContent = "LD Holding";
             gridProducts.innerHTML = "";
 
             if (!categories || categories.length === 0) {
-                // Afficher au moins le bouton + même si vide
-                const nextIndex = 0;
                 const addCard = document.createElement('div');
                 addCard.className = 'product-card';
                 addCard.innerHTML = `
@@ -2155,7 +2165,6 @@
             gridProducts.appendChild(addCard);
         }
 
-        // 2. Rendu des Produits d'une catégorie (2 colonnes)
         function renderProductsGrid() {
             btnBackToCats.style.display = 'block';
             const currentCat = categories.find(c => c.id === currentCategoryId);
@@ -2177,7 +2186,6 @@
             const activeProducts = currentCat.products || [];
 
             if (activeProducts.length === 0 && !isAdmin) {
-                // Aucun produit visible pour les utilisateurs
                 const addCard = document.createElement('div');
                 addCard.className = 'product-card';
                 addCard.innerHTML = `
@@ -2192,7 +2200,6 @@
             activeProducts.forEach((product) => {
                 const isVisible = product.visible !== false;
                 
-                // Si le produit est masqué et que l'utilisateur n'est pas Admin, on ne l'affiche pas
                 if (!isVisible && !isAdmin) return;
 
                 const hasQty = product.selectedQty && product.selectedQty > 0;
@@ -2201,10 +2208,12 @@
                 const card = document.createElement('div');
                 card.className = 'product-card';
                 
-                // Atténuation visuelle légère pour l'admin si le produit est masqué
                 if (isAdmin && !isVisible) {
                     card.style.opacity = "0.55";
                 }
+
+                // Logique conditionnelle pour afficher ou masquer le prix
+                const displayPrice = (!arePricesVisible && !isAdmin) ? '---' : parseFloat(product.price).toFixed(2);
 
                 card.innerHTML = `
                     <button class="btn-toggle-badge" onclick="toggleProductVisibilityFromGrid(${product.id}, event)">${isVisible ? '👁️' : '🙈'}</button>
@@ -2215,7 +2224,7 @@
                     <div class="product-meta">
                         <div class="product-name-line">${product.name}</div>
                         <div class="product-details-line">
-                            ${parseFloat(product.price).toFixed(2)} DZD - Pack: ${product.qty}
+                            ${displayPrice} DZD - Pack: ${product.qty}
                         </div>
                     </div>
                     <div class="product-actions">
@@ -2239,7 +2248,6 @@
             gridProducts.appendChild(addCard);
         }
 
-        // Navigation
         function navigateToCategory(catId) {
             currentCategoryId = catId;
             renderView();
@@ -2268,15 +2276,12 @@
             }
         }
 
-        // Modals Catégories
         function openCategoryModal() { categoryModalOverlay.classList.add('open'); }
         function closeCategoryModal(event) { categoryModalOverlay.classList.remove('open'); resetCategoryForm(); }
         
-        // Modals Produits
         function openProductModal() { modalOverlay.classList.add('open'); }
         function closeProductModal(event) { modalOverlay.classList.remove('open'); resetForm(); }
 
-        // Fichiers Images redimensionnés
         function handleCatFileChange(event) {
             const file = event.target.files[0];
             if (file) {
@@ -2299,7 +2304,6 @@
             }
         }
 
-        // Rénovations des formulaires
         function resetCategoryForm() {
             categoryForm.reset(); selectedCatImageDataUrl = "";
             catUploadStatus.textContent = "📸 Ajouter une photo"; catUploadStatus.style.color = "#00adb5";
@@ -2310,7 +2314,6 @@
             uploadStatus.textContent = "📸 Ajouter une photo"; uploadStatus.style.color = "#00adb5";
         }
 
-        // Submissions Formulaires
         function handleCategoryFormSubmit(event) {
             event.preventDefault();
             const name = document.getElementById('catName').value;
@@ -2338,7 +2341,6 @@
             const currentCat = categories.find(c => c.id === currentCategoryId);
             if (!currentCat) return;
 
-            // Vérification de doublon par nom
             const exists = currentCat.products && currentCat.products.some(p => p.name.toLowerCase() === name.toLowerCase());
             if (exists) {
                 showToastNotification("Ce produit existe déjà !", true);
@@ -2420,7 +2422,9 @@
         function updateCheckoutBar() {
             if (cart.length > 0) {
                 let totalGlobal = cart.reduce((sum, item) => sum + item.totalItemPrice, 0);
-                checkoutTotalDisplay.textContent = "Total : " + totalGlobal.toFixed(2) + " DZD";
+                // Logique d'affichage conditionnelle du prix total
+                const totalDisplay = (!arePricesVisible && !isAdmin) ? "Total : --- DZD" : "Total : " + totalGlobal.toFixed(2) + " DZD";
+                checkoutTotalDisplay.textContent = totalDisplay;
                 checkoutBar.classList.add('active');
             } else {
                 checkoutBar.classList.remove('active');
@@ -2433,14 +2437,15 @@
                 cartItemsContainer.innerHTML = `<div style="text-align:center;color:#a0a0aa;padding:20px 0;">Le panier est vide</div>`;
             } else {
                 cart.forEach(item => {
+                    const priceDisplay = (!arePricesVisible && !isAdmin) ? '---' : item.totalItemPrice.toFixed(2);
                     const row = document.createElement('div');
                     row.className = 'cart-item';
                     row.innerHTML = `
                         <div class="cart-item-info">
                             <div class="cart-item-title">${item.name}</div>
-                            <div class="cart-item-sub">Quantité: ${item.orderQty} × Pack (${item.packQty}) × ${item.price.toFixed(2)} DZD</div>
+                            <div class="cart-item-sub">Quantité: ${item.orderQty} × Pack (${item.packQty})</div>
                         </div>
-                        <div class="cart-item-price">${item.totalItemPrice.toFixed(2)} DZD</div>
+                        <div class="cart-item-price">${priceDisplay} DZD</div>
                     `;
                     cartItemsContainer.appendChild(row);
                 });
@@ -2575,7 +2580,6 @@
             }
         }
 
-        // Initialisation globale au chargement
         renderView();
         setTimeout(() => {
             initFirebaseSync();
