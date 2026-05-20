@@ -1041,9 +1041,6 @@
 
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#4b6cb7">
-<link rel="apple-touch-icon" href="icon.png">
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#4b6cb7">
 <link rel="apple-touch-icon" href="icon.png"></head>
 <body>
 
@@ -1312,6 +1309,26 @@
         const deleteConfirmOverlay = document.getElementById('deleteConfirmOverlay');
         const deleteConfirmMessage = document.getElementById('deleteConfirmMessage');
         const btnConfirmDeleteAction = document.getElementById('btnConfirmDeleteAction');
+
+        // Fonctions utilitaires de redimensionnement d'image
+        function resizeImage(file, callback) {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 500;
+                    const scaleFactor = MAX_WIDTH / img.width;
+                    canvas.width = MAX_WIDTH;
+                    canvas.height = img.height * scaleFactor;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    callback(canvas.toDataURL('image/jpeg', 0.7));
+                };
+            };
+        }
 
         // Fonction de bascule de thèmes (Light / Dark)
         function toggleTheme() {
@@ -1822,28 +1839,26 @@
         function openProductModal() { modalOverlay.classList.add('open'); }
         function closeProductModal(event) { modalOverlay.classList.remove('open'); resetForm(); }
 
-        // Fichiers Images
+        // Fichiers Images redimensionnés
         function handleCatFileChange(event) {
             const file = event.target.files[0];
             if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    selectedCatImageDataUrl = e.target.result;
-                    catUploadStatus.textContent = "✓ Image chargée"; catUploadStatus.style.color = "#4caf50";
-                };
-                reader.readAsDataURL(file);
+                resizeImage(file, (resizedDataUrl) => {
+                    selectedCatImageDataUrl = resizedDataUrl;
+                    catUploadStatus.textContent = "✓ Image chargée"; 
+                    catUploadStatus.style.color = "#4caf50";
+                });
             }
         }
 
         function handleFileChange(event) {
             const file = event.target.files[0];
             if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    selectedImageDataUrl = e.target.result;
-                    uploadStatus.textContent = "✓ Image chargée"; uploadStatus.style.color = "#4caf50";
-                };
-                reader.readAsDataURL(file);
+                resizeImage(file, (resizedDataUrl) => {
+                    selectedImageDataUrl = resizedDataUrl;
+                    uploadStatus.textContent = "✓ Image chargée"; 
+                    uploadStatus.style.color = "#4caf50";
+                });
             }
         }
 
@@ -1879,20 +1894,27 @@
 
         function handleFormSubmit(event) {
             event.preventDefault();
-            const name = document.getElementById('prodName').value;
+            const name = document.getElementById('prodName').value.trim();
             const qty = document.getElementById('prodQty').value;
             const price = document.getElementById('prodPrice').value;
+
+            const currentCat = categories.find(c => c.id === currentCategoryId);
+            if (!currentCat) return;
+
+            // Vérification de doublon par nom
+            const exists = currentCat.products && currentCat.products.some(p => p.name.toLowerCase() === name.toLowerCase());
+            if (exists) {
+                showToastNotification("Ce produit existe déjà !", true);
+                return;
+            }
 
             const newProduct = {
                 id: Date.now(), name: name, qty: qty, price: price, image: selectedImageDataUrl, selectedQty: 0, visible: true
             };
 
-            const currentCat = categories.find(c => c.id === currentCategoryId);
-            if (currentCat) {
-                if (!currentCat.products) currentCat.products = [];
-                currentCat.products.push(newProduct);
-                localStorage.setItem('savedCategories', JSON.stringify(categories));
-            }
+            if (!currentCat.products) currentCat.products = [];
+            currentCat.products.push(newProduct);
+            localStorage.setItem('savedCategories', JSON.stringify(categories));
             
             renderView();
             modalOverlay.classList.remove('open');
@@ -2119,8 +2141,6 @@
         // Initialisation globale au chargement
         renderView();
     </script>
-
-<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));}</script>
 
 <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));}</script>
 </body>
