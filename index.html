@@ -419,6 +419,12 @@
             pointer-events: auto;
         }
 
+        /* Fix Z-Index spécifique pour les modales de la Station */
+        #editProductStationOverlay,
+        #deleteProductStationOverlay {
+            z-index: 3000 !important;
+        }
+
         .modal-content {
             width: 90%;
             max-width: 440px;
@@ -1268,6 +1274,53 @@
         </div>
     </div>
 
+    <!-- Modal édition produit Station -->
+    <div class="modal-overlay" id="editProductStationOverlay" onclick="closeEditProductStationModal()">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 460px;">
+            <div class="modal-title" style="color: #ff9f43;">Modifier Produit</div>
+            <form id="editProductStationForm" onsubmit="handleEditProductStationSubmit(event)">
+                <div class="form-group">
+                    <label for="editProdName">Nom du produit</label>
+                    <input type="text" id="editProdName" class="form-control" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="editProdQty">Quantité dans le carton</label>
+                    <input type="number" id="editProdQty" class="form-control" required min="1" inputmode="numeric">
+                </div>
+                <div class="form-group">
+                    <label for="editProdPrice">Prix (DZD)</label>
+                    <input type="number" id="editProdPrice" class="form-control" step="0.01" required min="0" inputmode="decimal">
+                </div>
+                <div class="form-group">
+                    <label for="editProdImage">Image du produit</label>
+                    <div id="editProdImagePreview" style="width:100%; height:200px; background:#1e1e24; border:1px solid #33333c; border-radius:12px; margin-bottom:12px; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+                        <img id="editProdImageImg" style="width:100%; height:100%; object-fit:cover;" alt="">
+                    </div>
+                    <div class="file-upload-wrapper">
+                        <span class="file-upload-text" id="editProdUploadStatus">📸 Changer la photo</span>
+                        <input type="file" id="editProdImage" accept="image/*" onchange="handleEditProductImageChange(event)">
+                    </div>
+                </div>
+                <button type="submit" class="btn-submit" style="background: #ff9f43; box-shadow: 0 4px 12px rgba(255, 159, 67, 0.3);">Valider modifications</button>
+            </form>
+            <button class="btn-submit" style="background: #33333c; box-shadow: none; margin-top:8px;" onclick="closeEditProductStationModal()">Annuler</button>
+        </div>
+    </div>
+
+    <!-- Modal confirmation suppression produit Station -->
+    <div class="modal-overlay" id="deleteProductStationOverlay" onclick="closeDeleteProductStationModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-title" style="color: #ff4d4d; font-weight: 700;">Confirmer la suppression</div>
+            <div id="deleteProductStationMessage" style="text-align: center; font-size: 0.95rem; color: #e0e0e6; line-height: 1.5; padding: 10px 0;">
+                <!-- Rempli dynamiquement -->
+            </div>
+            <div class="confirm-buttons-row">
+                <button class="btn-confirm-cancel" onclick="closeDeleteProductStationModal()">Annuler</button>
+                <button class="btn-confirm-delete" id="btnConfirmDeleteProductStation">Supprimer</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Administration Station -->
     <div class="modal-overlay" id="stationOverlay" onclick="closeStationPage()">
         <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 460px;">
@@ -1297,11 +1350,22 @@
         let activeQtyProductId = null;
         let zoomedImageElement = null; 
         let audioCtx = null;
+        
+        // Variables pour édition station
+        let editingStationProductId = null;
+        let editingStationCategoryId = null;
+        let editingStationProductImage = null;
+        let deleteStationProductId = null;
+        let deleteStationCategoryId = null;
 
         // Variables de stockage temporaire pour l'élément à supprimer ou accomplir
         let deletionTargetType = null; 
         let deletionTargetId = null;
         let accomplishTargetId = null;
+        
+        // Variables pour long press detection
+        let longPressTimer = null;
+        let longPressStarted = false;
 
         const modalOverlay = document.getElementById('modalOverlay');
         const categoryModalOverlay = document.getElementById('categoryModalOverlay');
@@ -1637,9 +1701,9 @@
                         const isVisible = prod.visible !== false;
                         const btnClass = isVisible ? 'active-green' : 'hidden-red';
                         prodsHtml += `
-                            <div class="station-prod-row">
+                            <div class="station-prod-row" onclick="openEditProductStationModal(${cat.id}, ${prod.id})" oncontextmenu="return false;" ontouchstart="startLongPress(event, ${cat.id}, ${prod.id})" ontouchend="endLongPress()" ontouchcancel="endLongPress()">
                                 <span style="font-size:0.9rem; font-weight:600;">${prod.name}</span>
-                                <button class="btn-station-toggle ${btnClass}" onclick="toggleProductVisibility(${cat.id}, ${prod.id})"></button>
+                                <button class="btn-station-toggle ${btnClass}" onclick="event.stopPropagation(); toggleProductVisibility(${cat.id}, ${prod.id})"></button>
                             </div>
                         `;
                     });
@@ -1692,6 +1756,151 @@
             if (event) event.stopPropagation();
             if (!currentCategoryId) return;
             toggleProductVisibility(currentCategoryId, prodId);
+        }
+
+        // Long press detection pour suppression
+        function startLongPress(event, catId, prodId) {
+            event.preventDefault();
+            longPressStarted = true;
+            longPressTimer = setTimeout(() => {
+                if (longPressStarted) {
+                    openDeleteProductStationModal(catId, prodId);
+                }
+            }, 500);
+        }
+
+        function endLongPress() {
+            longPressStarted = false;
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+        }
+
+        // Édition de produit station
+        function openEditProductStationModal(catId, prodId) {
+            endLongPress();
+            const cat = categories.find(c => c.id === catId);
+            if (!cat || !cat.products) return;
+            
+            const prod = cat.products.find(p => p.id === prodId);
+            if (!prod) return;
+
+            editingStationProductId = prodId;
+            editingStationCategoryId = catId;
+            editingStationProductImage = prod.image;
+
+            document.getElementById('editProdName').value = prod.name;
+            document.getElementById('editProdQty').value = prod.qty;
+            document.getElementById('editProdPrice').value = prod.price;
+            document.getElementById('editProdUploadStatus').textContent = "📸 Changer la photo";
+            document.getElementById('editProdUploadStatus').style.color = "#00adb5";
+            
+            if (prod.image) {
+                document.getElementById('editProdImageImg').src = prod.image;
+                document.getElementById('editProdImagePreview').style.display = 'flex';
+            } else {
+                document.getElementById('editProdImagePreview').style.display = 'none';
+            }
+
+            document.getElementById('editProductStationOverlay').classList.add('open');
+        }
+
+        function closeEditProductStationModal() {
+            document.getElementById('editProductStationOverlay').classList.remove('open');
+            editingStationProductId = null;
+            editingStationCategoryId = null;
+            editingStationProductImage = null;
+            document.getElementById('editProductStationForm').reset();
+        }
+
+        function handleEditProductImageChange(event) {
+            const file = event.target.files[0];
+            if (file) {
+                resizeImage(file, (resizedDataUrl) => {
+                    editingStationProductImage = resizedDataUrl;
+                    document.getElementById('editProdImageImg').src = resizedDataUrl;
+                    document.getElementById('editProdImagePreview').style.display = 'flex';
+                    document.getElementById('editProdUploadStatus').textContent = "✓ Image chargée"; 
+                    document.getElementById('editProdUploadStatus').style.color = "#4caf50";
+                });
+            }
+        }
+
+        function handleEditProductStationSubmit(event) {
+            event.preventDefault();
+            
+            if (!editingStationProductId || !editingStationCategoryId) return;
+
+            const cat = categories.find(c => c.id === editingStationCategoryId);
+            if (!cat || !cat.products) return;
+
+            const prod = cat.products.find(p => p.id === editingStationProductId);
+            if (!prod) return;
+
+            const newName = document.getElementById('editProdName').value.trim();
+            const newQty = document.getElementById('editProdQty').value;
+            const newPrice = document.getElementById('editProdPrice').value;
+
+            // Vérifier doublon (sauf si même produit)
+            const exists = cat.products.some(p => p.id !== editingStationProductId && p.name.toLowerCase() === newName.toLowerCase());
+            if (exists) {
+                showToastNotification("Un produit avec ce nom existe déjà !", true);
+                return;
+            }
+
+            prod.name = newName;
+            prod.qty = newQty;
+            prod.price = newPrice;
+            if (editingStationProductImage) {
+                prod.image = editingStationProductImage;
+            }
+
+            saveCategoriesToFirebase();
+            closeEditProductStationModal();
+            renderStationCategories();
+            showToastNotification("Produit modifié avec succès !", false);
+        }
+
+        // Suppression de produit station
+        function openDeleteProductStationModal(catId, prodId) {
+            const cat = categories.find(c => c.id === catId);
+            if (!cat || !cat.products) return;
+
+            const prod = cat.products.find(p => p.id === prodId);
+            if (!prod) return;
+
+            deleteStationProductId = prodId;
+            deleteStationCategoryId = catId;
+
+            document.getElementById('deleteProductStationMessage').textContent = `Voulez-vous vraiment supprimer le produit "${prod.name}" ?`;
+            document.getElementById('btnConfirmDeleteProductStation').onclick = executeDeleteProductStation;
+            document.getElementById('deleteProductStationOverlay').classList.add('open');
+        }
+
+        function closeDeleteProductStationModal() {
+            document.getElementById('deleteProductStationOverlay').classList.remove('open');
+            deleteStationProductId = null;
+            deleteStationCategoryId = null;
+        }
+
+        function executeDeleteProductStation() {
+            if (!deleteStationProductId || !deleteStationCategoryId) return;
+
+            const cat = categories.find(c => c.id === deleteStationCategoryId);
+            if (!cat || !cat.products) return;
+
+            const prod = cat.products.find(p => p.id === deleteStationProductId);
+            if (!prod) return;
+
+            const prodName = prod.name;
+            cat.products = cat.products.filter(p => p.id !== deleteStationProductId);
+            cart = cart.filter(item => item.id !== deleteStationProductId);
+
+            saveCategoriesToFirebase();
+            closeDeleteProductStationModal();
+            renderStationCategories();
+            showToastNotification(`Produit "${prodName}" supprimé !`, false);
         }
 
         // Gestion de l'agrandissement d'image isolé
