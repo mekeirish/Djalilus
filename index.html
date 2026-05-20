@@ -4,6 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>LD Holding</title>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+        import { getDatabase } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBauxPkS-FXjCSErcluaOlReANeOL0vPEs",
+            authDomain: "monapp-d2909.firebaseapp.com",
+            databaseURL: "https://monapp-d2909-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "monapp-d2909",
+            storageBucket: "monapp-d2909.firebasestorage.app",
+            messagingSenderId: "632425841691",
+            appId: "1:632425841691:web:254fc61fd1bf9dd6fee4be"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        // Expose la base de données globalement pour pouvoir l'utiliser dans ton application
+        window.firebaseDb = getDatabase(app); 
+    </script>
+
     <style>
         /* Configuration de base pour smartphone */
         * {
@@ -620,7 +640,8 @@
         .key.success-btn {
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5), inset 0 2px 1px rgba(255, 255, 255, 0.1), inset 0 -3px 4px rgba(0, 0, 0, 0.4), 0 0 0 1px #2e7d32;
         }
-        .key.success-btn span { color: #2e7d32; }
+        .key.success-btn span { color: #2e7d32;
+        }
 
         .key:active {
             background: linear-gradient(135deg, #131518, #22252a);
@@ -649,7 +670,8 @@
         .key.success-btn::after {
             background: radial-gradient(circle, rgba(76, 175, 80, 0.4) 0%, rgba(0,0,0,0) 70%);
         }
-        .key:active::after { opacity: 1; transform: scale(1.3); transition: 0s; }
+        .key:active::after { opacity: 1; transform: scale(1.3); transition: 0s;
+        }
 
         /* Structure d'une fiche Commande pour l'Admin */
         .order-card {
@@ -1044,7 +1066,6 @@
 <link rel="apple-touch-icon" href="icon.png"></head>
 <body>
 
-    <!-- Fond protecteur d'isolation pour le zoom -->
     <div class="zoom-backdrop" id="zoomBackdrop" onclick="closeZoomedImage()"></div>
 
     <div class="app-container">
@@ -1057,7 +1078,6 @@
             </div>
         </header>
 
-        <!-- Menu d'onglets complémentaires pour l'Admin modifié -->
         <div class="admin-dashboard-panel" id="adminDashboardPanel">
             <button class="btn-admin-panel" onclick="openAdminOrdersModal('new')">
                 Nouvelles <span class="notification-dot" id="btnNewOrdersDot">●</span>
@@ -1068,26 +1088,21 @@
         </div>
 
         <main class="grid-products" id="gridProducts">
-            <!-- Injecté dynamiquement -->
-        </main>
+            </main>
     </div>
 
-    <!-- Signature discrète et tout en bas de l'écran -->
     <div class="app-signature">
         Made by Brahim Laiche 2026 Paris
     </div>
 
-    <!-- Barre de commande en bas -->
     <div class="checkout-bar" id="checkoutBar">
         <button class="btn-checkout-left" onclick="openCartModal()">Liste</button>
         <div class="checkout-total-center" id="checkoutTotalDisplay">Total : 0.00 DZD</div>
         <button class="btn-checkout-right" onclick="openCustomerDetailsModal()">Commander</button>
     </div>
 
-    <!-- Notification flottante unique -->
     <div class="toast-notification" id="toastNotification">Produit ajouté au panier.</div>
 
-    <!-- Modal Formulaire Nouvelle Catégorie -->
     <div class="modal-overlay" id="categoryModalOverlay" onclick="closeCategoryModal(event)">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-title">Nouvelle Catégorie</div>
@@ -1105,7 +1120,6 @@
         </div>
     </div>
 
-    <!-- Modal Formulaire Nouveau Produit -->
     <div class="modal-overlay" id="modalOverlay" onclick="closeProductModal(event)">
         <div class="modal-content" id="modalContent" onclick="event.stopPropagation()">
             <div class="modal-title">Nouveau Produit</div>
@@ -1131,13 +1145,11 @@
         </div>
     </div>
 
-    <!-- Modal externe flottant interne de confirmation de suppression -->
     <div class="modal-overlay" id="deleteConfirmOverlay" onclick="closeDeleteConfirmModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-title" style="color: #ff4d4d; font-weight: 700;">Confirmer la suppression</div>
             <div id="deleteConfirmMessage" style="text-align: center; font-size: 0.95rem; color: #e0e0e6; line-height: 1.5; padding: 10px 0;">
-                <!-- Rempli dynamiquement -->
-            </div>
+                </div>
             <div class="confirm-buttons-row">
                 <button class="btn-confirm-cancel" onclick="closeDeleteConfirmModal()">Annuler</button>
                 <button class="btn-confirm-delete" id="btnConfirmDeleteAction">Supprimer</button>
@@ -1145,7 +1157,6 @@
         </div>
     </div>
 
-    <!-- Modal interne de confirmation de commande accomplie -->
     <div class="modal-overlay" id="accomplishConfirmOverlay" onclick="closeAccomplishConfirmModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-title" style="color: #00adb5; font-weight: 700;">Confirmer la livraison</div>
@@ -1159,7 +1170,6 @@
         </div>
     </div>
 
-    <!-- NOUVEAU MODAL PAVÉ NUMÉRIQUE INDUSTRIEL ADAPTATIF -->
     <div class="modal-overlay" id="keypadOverlay" onclick="closeKeypadModal()">
         <div class="modal-content" onclick="event.stopPropagation()" style="background: transparent; box-shadow: none; padding: 0; width: auto;">
             
@@ -1167,8 +1177,7 @@
                 <div class="keypad-header">
                     <h1 id="keypadTitleModel">Code d'Accès</h1>
                     <div class="display-case" id="dotDisplayCase">
-                        <!-- Rempli dynamiquement -->
-                    </div>
+                        </div>
                 </div>
 
                 <div class="keypad-grid-model">
@@ -1193,18 +1202,15 @@
         </div>
     </div>
 
-    <!-- Modal Liste du Panier -->
     <div class="modal-overlay" id="cartModalOverlay" onclick="closeCartModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-title" style="color: #00adb5;">Détails de votre Panier</div>
             <div id="cartItemsContainer" style="margin-bottom: 20px;">
-                <!-- Injecté dynamiquement -->
-            </div>
+                </div>
             <button class="btn-submit" style="background: #33333c; box-shadow: none;" onclick="closeCartModal()">Fermer</button>
         </div>
     </div>
 
-    <!-- Modal Tunnel de Commande Formulaire Client -->
     <div class="modal-overlay" id="customerDetailsOverlay" onclick="closeCustomerDetailsModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-title" style="color: #4caf50;">Informations de Livraison</div>
@@ -1230,24 +1236,20 @@
         </div>
     </div>
 
-    <!-- Modal Consultation Commandes Admin (Nouvelles / Traitées / Livrées) -->
     <div class="modal-overlay" id="adminOrdersOverlay" onclick="closeAdminOrdersModal()">
         <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 460px;">
             <div class="modal-title" id="adminOrdersTitle" style="color: #ff9f43;">Commandes</div>
             <div id="adminOrdersContainer" style="margin-bottom: 20px;">
-                <!-- Injecté dynamiquement -->
-            </div>
+                </div>
             <button class="btn-submit" style="background: #33333c; box-shadow: none;" onclick="closeAdminOrdersModal()">Fermer</button>
         </div>
     </div>
 
-    <!-- Modal Administration Station -->
     <div class="modal-overlay" id="stationOverlay" onclick="closeStationPage()">
         <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 460px;">
             <div class="modal-title" style="color: #ff9f43;">Administration Station</div>
             <div id="stationCategoriesContainer" style="margin-bottom: 20px; max-height: 60vh; overflow-y: auto;">
-                <!-- Injecté dynamiquement -->
-            </div>
+                </div>
             <button class="btn-submit" style="background: #33333c; box-shadow: none;" onclick="closeStationPage()">Fermer</button>
         </div>
     </div>
