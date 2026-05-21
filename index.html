@@ -1342,7 +1342,7 @@
                 <div class="form-group">
                     <label for="editProdImage">Image du produit</label>
                     <div id="editProdImagePreview" style="width:100%; height:200px; background:#1e1e24; border:1px solid #33333c; border-radius:12px; margin-bottom:12px; display:flex; align-items:center; justify-content:center; overflow:hidden;">
-                        <img id="editProdImageImg" style="width:100%; height:100%; object-fit:cover;" alt="">
+                        <img id="editProdImageImg" loading="lazy" style="width:100%; height:100%; object-fit:cover;" alt="">
                     </div>
                     <div class="file-upload-wrapper">
                         <span class="file-upload-text" id="editProdUploadStatus">📸 Changer la photo</span>
@@ -1612,15 +1612,15 @@
                 img.src = event.target.result;
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    // Dimension max optimisée pour écran mobile (400px suffit pour vignettes)
-                    const MAX_WIDTH = 400; 
+                    // Dimension max optimisée pour écran mobile (300px suffit pour vignettes)
+                    const MAX_WIDTH = 300; 
                     const scaleFactor = Math.min(1, MAX_WIDTH / img.width);
                     canvas.width = img.width * scaleFactor;
                     canvas.height = img.height * scaleFactor;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    // Taux de qualité à 0.6 pour une compression efficace sans perte visuelle majeure
-                    callback(canvas.toDataURL('image/jpeg', 0.6));
+                    // Taux de qualité à 0.4 pour une compression efficace
+                    callback(canvas.toDataURL('image/jpeg', 0.4));
                 };
             };
         }
@@ -2179,7 +2179,7 @@
                 card.innerHTML = `
                     <button class="btn-delete-badge" onclick="deleteCategory(${cat.id}, event)">×</button>
                     <div class="tile" onclick="navigateToCategory(${cat.id})">
-                        ${cat.image ? `<img src="${cat.image}" class="product-bg" alt="">` : ''}
+                        ${cat.image ? `<img src="${cat.image}" class="product-bg" loading="lazy" alt="">` : ''}
                     </div>
                     <div class="product-meta">
                         <div class="product-name-line" style="text-align:center; font-weight:700;">${cat.name}</div>
@@ -2224,13 +2224,7 @@
             // Logic for visibility
             const visibleProducts = isAdmin ? activeProducts : activeProducts.filter(p => p.visible !== false);
 
-            // Pagination Logic
-            const totalPages = Math.ceil(visibleProducts.length / ITEMS_PER_PAGE);
-            if (currentPage >= totalPages && totalPages > 0) currentPage = totalPages - 1;
-            
-            const start = currentPage * ITEMS_PER_PAGE;
-            const end = start + ITEMS_PER_PAGE;
-            const paginatedProducts = visibleProducts.slice(start, end);
+            const paginatedProducts = visibleProducts;
 
             // Render products
             paginatedProducts.forEach((product) => {
@@ -2251,7 +2245,7 @@
                     <button class="btn-toggle-badge" onclick="toggleProductVisibilityFromGrid(${product.id}, event)">${isVisible ? '👁️' : '🙈'}</button>
                     <button class="btn-delete-badge" onclick="deleteProduct(${product.id}, event)">×</button>
                     <div class="tile">
-                        ${product.image ? `<img src="${product.image}" class="product-bg" onclick="toggleImageZoom(this, event)" alt="">` : ''}
+                        ${product.image ? `<img src="${product.image}" class="product-bg" loading="lazy" onclick="toggleImageZoom(this, event)" alt="">` : ''}
                     </div>
                     <div class="product-meta">
                         <div class="product-name-line">${product.name}</div>
@@ -2269,7 +2263,7 @@
                 gridProducts.appendChild(card);
             });
 
-            // "Add Product" button only on last page or if empty
+            // "Add Product" button only
             if (isAdmin) {
                 const addCard = document.createElement('div');
                 addCard.className = 'product-card';
@@ -2279,29 +2273,6 @@
                     </div>
                 `;
                 gridProducts.appendChild(addCard);
-            }
-
-            // Render Pagination Buttons
-            if (totalPages > 1) {
-                const prevBtn = document.createElement('button');
-                prevBtn.className = 'btn-page';
-                prevBtn.textContent = '←';
-                prevBtn.disabled = currentPage === 0;
-                prevBtn.onclick = () => { currentPage--; renderView(); };
-                
-                const nextBtn = document.createElement('button');
-                nextBtn.className = 'btn-page';
-                nextBtn.textContent = '→';
-                nextBtn.disabled = currentPage >= totalPages - 1;
-                nextBtn.onclick = () => { currentPage++; renderView(); };
-                
-                const pageLabel = document.createElement('span');
-                pageLabel.textContent = `Page ${currentPage + 1}/${totalPages}`;
-                pageLabel.style.fontSize = "0.8rem";
-                
-                paginationContainer.appendChild(prevBtn);
-                paginationContainer.appendChild(pageLabel);
-                paginationContainer.appendChild(nextBtn);
             }
         }
 
