@@ -202,13 +202,14 @@
             display: none;
         }
 
-        /* Grille à deux colonnes */
+        /* Grille à deux colonnes corrigée pour uniformité */
         .grid-products {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 20px 16px;
+            gap: 16px;
             width: 100%;
             margin-bottom: 20px;
+            align-content: start;
         }
 
         .product-card {
@@ -218,8 +219,9 @@
             position: relative;
         }
 
-        /* Style des carreaux */
+        /* Style des carreaux avec forçage de taille */
         .tile {
+            width: 100%;
             aspect-ratio: 1 / 1;
             background: #25252b;
             border-radius: 20px;
@@ -230,7 +232,7 @@
             justify-content: center;
             align-items: center;
             position: relative;
-            width: 100%;
+            overflow: hidden;
         }
 
         .tile:not(.zoomed-in-active):active {
@@ -312,13 +314,11 @@
         .product-bg {
             width: 100%;
             height: 100%;
-            aspect-ratio: 1 / 1;
             object-fit: cover;
             cursor: pointer;
             border-radius: 20px;
             transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.2s ease;
             z-index: 1;
-            transform-origin: center center;
         }
 
         /* Lightbox d'agrandissement propre sans interaction avec le fond */
@@ -356,6 +356,7 @@
         .product-meta {
             margin-top: 8px;
             font-size: 0.9rem;
+            width: 100%;
         }
 
         .product-name-line {
@@ -2220,14 +2221,9 @@
             }
 
             const activeProducts = currentCat.products || [];
-            
-            // Logic for visibility
             const visibleProducts = isAdmin ? activeProducts : activeProducts.filter(p => p.visible !== false);
 
-            const paginatedProducts = visibleProducts;
-
-            // Render products
-            paginatedProducts.forEach((product) => {
+            visibleProducts.forEach((product) => {
                 const isVisible = product.visible !== false;
                 const hasQty = product.selectedQty && product.selectedQty > 0;
                 const isInCart = cart.some(item => item.id === product.id);
@@ -2263,7 +2259,6 @@
                 gridProducts.appendChild(card);
             });
 
-            // "Add Product" button only
             if (isAdmin) {
                 const addCard = document.createElement('div');
                 addCard.className = 'product-card';
@@ -2452,7 +2447,6 @@
         function updateCheckoutBar() {
             if (cart.length > 0) {
                 let totalGlobal = cart.reduce((sum, item) => sum + item.totalItemPrice, 0);
-                // Logique d'affichage conditionnelle du prix total
                 const totalDisplay = (!arePricesVisible && !isAdmin) ? "Total : --- DZD" : "Total : " + totalGlobal.toFixed(2) + " DZD";
                 checkoutTotalDisplay.textContent = totalDisplay;
                 checkoutBar.classList.add('active');
@@ -2615,6 +2609,8 @@
             initFirebaseSync();
         }, 100);
     </script>
+
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));}</script>
 
 <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));}</script>
 </body>
