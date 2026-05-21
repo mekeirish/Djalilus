@@ -72,6 +72,29 @@
             letter-spacing: 0.5px;
         }
 
+        /* Pagination Styles */
+        .pagination-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+            width: 100%;
+        }
+        .btn-page {
+            background: #33333c;
+            color: #ffffff;
+            border: 1px solid #444450;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        .btn-page:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
         /* Bouton Retour aux catégories */
         .btn-back {
             position: absolute;
@@ -185,7 +208,8 @@
             grid-template-columns: repeat(2, 1fr);
             gap: 20px 16px;
             width: 100%;
-            margin-bottom: 40px;
+            margin-bottom: 20px;
+            align-items: start;
         }
 
         .product-card {
@@ -193,6 +217,7 @@
             flex-direction: column;
             width: 100%;
             position: relative;
+            min-width: 0;
         }
 
         /* Style des carreaux */
@@ -1124,6 +1149,10 @@
         <main class="grid-products" id="gridProducts">
             <!-- Injecté dynamiquement -->
         </main>
+        
+        <div id="paginationContainer" class="pagination-controls">
+            <!-- Boutons de pagination dynamiques -->
+        </div>
     </div>
 
     <!-- Signature discrète et tout en bas de l'écran -->
@@ -1370,6 +1399,10 @@
     </div>
 
     <script>
+        // Pagination setup
+        const ITEMS_PER_PAGE = 12;
+        let currentPage = 0;
+
         // Système global Catégories et Produits imbriqués
         let categories = JSON.parse(localStorage.getItem('savedCategories')) || []; 
         let currentCategoryId = null; 
@@ -1581,13 +1614,15 @@
                 img.src = event.target.result;
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 500;
-                    const scaleFactor = MAX_WIDTH / img.width;
-                    canvas.width = MAX_WIDTH;
+                    // Dimension max optimisée pour écran mobile (400px suffit pour vignettes)
+                    const MAX_WIDTH = 400; 
+                    const scaleFactor = Math.min(1, MAX_WIDTH / img.width);
+                    canvas.width = img.width * scaleFactor;
                     canvas.height = img.height * scaleFactor;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    callback(canvas.toDataURL('image/jpeg', 0.7));
+                    // Taux de qualité à 0.6 pour une compression efficace sans perte visuelle majeure
+                    callback(canvas.toDataURL('image/jpeg', 0.6));
                 };
             };
         }
@@ -2116,6 +2151,7 @@
                 categories = [];
             }
             if (currentCategoryId === null) {
+                document.getElementById('paginationContainer').innerHTML = "";
                 renderCategoriesGrid();
             } else {
                 renderProductsGrid();
@@ -2170,6 +2206,8 @@
             const currentCat = categories.find(c => c.id === currentCategoryId);
             appHeaderTitle.textContent = currentCat ? currentCat.name : "Produits";
             gridProducts.innerHTML = "";
+            const paginationContainer = document.getElementById('paginationContainer');
+            paginationContainer.innerHTML = "";
 
             if (!currentCat) {
                 const addCard = document.createElement('div');
@@ -2184,24 +2222,21 @@
             }
 
             const activeProducts = currentCat.products || [];
+            
+            // Logic for visibility
+            const visibleProducts = isAdmin ? activeProducts : activeProducts.filter(p => p.visible !== false);
 
-            if (activeProducts.length === 0 && !isAdmin) {
-                const addCard = document.createElement('div');
-                addCard.className = 'product-card';
-                addCard.innerHTML = `
-                    <div class="tile active" id="tile-prod-0">
-                        <div class="btn-add" onclick="openProductModal()">+</div>
-                    </div>
-                `;
-                gridProducts.appendChild(addCard);
-                return;
-            }
+            // Pagination Logic
+            const totalPages = Math.ceil(visibleProducts.length / ITEMS_PER_PAGE);
+            if (currentPage >= totalPages && totalPages > 0) currentPage = totalPages - 1;
+            
+            const start = currentPage * ITEMS_PER_PAGE;
+            const end = start + ITEMS_PER_PAGE;
+            const paginatedProducts = visibleProducts.slice(start, end);
 
-            activeProducts.forEach((product) => {
+            // Render products
+            paginatedProducts.forEach((product) => {
                 const isVisible = product.visible !== false;
-                
-                if (!isVisible && !isAdmin) return;
-
                 const hasQty = product.selectedQty && product.selectedQty > 0;
                 const isInCart = cart.some(item => item.id === product.id);
                 
@@ -2212,7 +2247,6 @@
                     card.style.opacity = "0.55";
                 }
 
-                // Logique conditionnelle pour afficher ou masquer le prix
                 const displayPrice = (!arePricesVisible && !isAdmin) ? '---' : parseFloat(product.price).toFixed(2);
 
                 card.innerHTML = `
@@ -2237,24 +2271,51 @@
                 gridProducts.appendChild(card);
             });
 
-            const nextIndex = activeProducts.length;
-            const addCard = document.createElement('div');
-            addCard.className = 'product-card';
-            addCard.innerHTML = `
-                <div class="tile active" id="tile-prod-${nextIndex}">
-                    <div class="btn-add" onclick="openProductModal()">+</div>
-                </div>
-            `;
-            gridProducts.appendChild(addCard);
+            // "Add Product" button only on last page or if empty
+            if (isAdmin) {
+                const addCard = document.createElement('div');
+                addCard.className = 'product-card';
+                addCard.innerHTML = `
+                    <div class="tile active" id="tile-prod-add">
+                        <div class="btn-add" onclick="openProductModal()">+</div>
+                    </div>
+                `;
+                gridProducts.appendChild(addCard);
+            }
+
+            // Render Pagination Buttons
+            if (totalPages > 1) {
+                const prevBtn = document.createElement('button');
+                prevBtn.className = 'btn-page';
+                prevBtn.textContent = '←';
+                prevBtn.disabled = currentPage === 0;
+                prevBtn.onclick = () => { currentPage--; renderView(); };
+                
+                const nextBtn = document.createElement('button');
+                nextBtn.className = 'btn-page';
+                nextBtn.textContent = '→';
+                nextBtn.disabled = currentPage >= totalPages - 1;
+                nextBtn.onclick = () => { currentPage++; renderView(); };
+                
+                const pageLabel = document.createElement('span');
+                pageLabel.textContent = `Page ${currentPage + 1}/${totalPages}`;
+                pageLabel.style.fontSize = "0.8rem";
+                
+                paginationContainer.appendChild(prevBtn);
+                paginationContainer.appendChild(pageLabel);
+                paginationContainer.appendChild(nextBtn);
+            }
         }
 
         function navigateToCategory(catId) {
             currentCategoryId = catId;
+            currentPage = 0;
             renderView();
         }
 
         function navigateToCategories() {
             currentCategoryId = null;
+            currentPage = 0;
             renderView();
         }
 
