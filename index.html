@@ -216,6 +216,8 @@
             flex-direction: column;
             width: 100%;
             position: relative;
+            min-width: 0;            /* Empêche le débordement horizontal */
+            align-self: start;      /* Aligne toutes les cartes en haut de leur ligne */
         }
 
         /* Style des carreaux */
@@ -231,6 +233,7 @@
             align-items: center;
             position: relative;
             width: 100%;
+            overflow: hidden;       /* Cache tout débordement d'image */
         }
 
         .tile:not(.zoomed-in-active):active {
@@ -1116,6 +1119,9 @@
 <meta name="theme-color" content="#4b6cb7">
 <link rel="apple-touch-icon" href="icon.png">
 
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4b6cb7">
+<link rel="apple-touch-icon" href="icon.png">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#4b6cb7">
 <link rel="apple-touch-icon" href="icon.png">
@@ -2618,6 +2624,8 @@
             initFirebaseSync();
         }, 100);
     </script>
+
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));}</script>
 
 <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));}</script>
 
